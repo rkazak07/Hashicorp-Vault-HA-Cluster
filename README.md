@@ -7,8 +7,8 @@
 * ✅ Ubuntu (22.04, 24.04)
 
 📌 Gereksinimler
-Ansible (2.10 veya üstü)
-SSH bağlantısı (Root veya sudo yetkili kullanıcı)
+* Ansible (2.10 veya üstü)
+* SSH bağlantısı (Root veya sudo yetkili kullanıcı)
 
 🛠 Değişkenlerin Düzenlenmesi
 📌 Inventories Dosyası (hosts.ini)
