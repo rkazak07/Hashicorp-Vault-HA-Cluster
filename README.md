@@ -1,4 +1,4 @@
-# Hashicorp Vault HA Cluster Ansible Playbook
+### Hashicorp Vault HA Cluster Ansible Playbook
 
 ## Bu doküman, HashiCorp Vault'un Ansible ile Debian 12 ve Ubuntu sistemlerinde nasıl kurulup yönetileceğini anlatır.
 
