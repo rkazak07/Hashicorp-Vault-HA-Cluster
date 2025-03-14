@@ -1,17 +1,17 @@
-### Hashicorp Vault HA Cluster Ansible Playbook
+# Hashicorp Vault HA Cluster Ansible Playbook
 
-## Bu doküman, HashiCorp Vault'un Ansible ile Debian 12 ve Ubuntu sistemlerinde nasıl kurulup yönetileceğini anlatır.
+ Bu doküman, HashiCorp Vault'un Ansible ile Debian 12 ve Ubuntu sistemlerinde nasıl kurulup yönetileceğini anlatır.
 
-🚀 Desteklenen İşletim Sistemleri
+### 🚀 Desteklenen İşletim Sistemleri
 * ✅ Debian 12
 * ✅ Ubuntu (22.04, 24.04)
 
-📌 Gereksinimler
+### 📌 Gereksinimler
 * Ansible (2.10 veya üstü)
 * SSH bağlantısı (Root veya sudo yetkili kullanıcı)
 
-🛠 Değişkenlerin Düzenlenmesi
-📌 Inventories Dosyası (hosts.ini)
+### 🛠 Değişkenlerin Düzenlenmesi
+### 📌 Inventories Dosyası (hosts.ini)
 Sunucularınızı ve IP adreslerini aşağıdaki gibi belirtebilirsiniz:
 
 ```
@@ -24,7 +24,7 @@ vault03.domain.com ansible_host=192.168.117.135
 vault
 ```
 
-📌 Genel Ayarlar (group_vars/all.yml)
+### 📌 Genel Ayarlar (group_vars/all.yml)
 Vault ve sistem genel ayarları buradan yönetilebilir:
 
 ```
@@ -41,7 +41,7 @@ iptables_install: true
 self_signed: true → Self-signed TLS sertifikaları otomatik oluşturulur.
 iptables_install: true → Iptables otomatik yapılandırılır. False yapılırsa iptables devre dışı kalır.
 
-📌 Her Sunucu İçin Ayrı Konfigürasyon (host_vars/)
+### 📌 Her Sunucu İçin Ayrı Konfigürasyon (host_vars/)
 
 Örnek: host_vars/vault01.domain.com.yml
 
@@ -77,7 +77,7 @@ vault_retry_join:
 
 ```
 
-# Ansible Playbook Çalıştırma
+## Ansible Playbook Çalıştırma
 
 host_vars, group_vars ve inventories düzenlemerini sisteminize göre sağladıktan sonra playbook'u çalıştırınız. Playbook çalıştırılmadan önce sunucularda *curl*, *sshpass*, *wget*, *sudo* yüklü olması gerekmektedir.
 
