@@ -36,8 +36,8 @@ vault_virtual_ip_address: "192.168.117.200"
 self_signed: false
 iptables_install: true
 ```
-self_signed: true → Self-signed TLS sertifikaları otomatik oluşturulur.
-iptables_install: true → Iptables otomatik yapılandırılır. False yapılırsa iptables devre dışı kalır.
+* self_signed: true → Self-signed TLS sertifikaları otomatik oluşturulur.
+* iptables_install: true → Iptables otomatik yapılandırılır. False yapılırsa iptables devre dışı kalır.
 
 ### 📌 Her Sunucu İçin Ayrı Konfigürasyon (host_vars/)
 
