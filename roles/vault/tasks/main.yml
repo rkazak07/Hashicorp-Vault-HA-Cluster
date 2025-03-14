@@ -183,7 +183,7 @@
 
 - name: "Unseal Vault nodes"
   shell: |
-    vault operator unseal -address=https://127.0.0.1:8200 -tls-skip-verify {{ item }}
+    vault operator unseal -address=https://127.0.0.1:8200 -tls-skip-verify {{ item | trim }}
   loop: "{{ vault_unseal_keys.unseal_keys_b64[0:vault_init_threshold] }}"
   when:
     - (vault_status.stdout | from_json).sealed
