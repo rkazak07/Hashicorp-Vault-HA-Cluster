@@ -42,7 +42,7 @@ iptables_install: true
 self_signed: true → Self-signed TLS sertifikaları otomatik oluşturulur.
 iptables_install: true → Iptables otomatik yapılandırılır. False yapılırsa iptables devre dışı kalır.
 
-### 📌 Her Sunucu İçin Ayrı Konfigürasyon (host_vars/)
+### 📌 Her Sunucu İçin Ayrı Konfigürasyon (host_vars/)
 
 Örnek: host_vars/vault01.domain.com.yml
 
@@ -78,7 +78,7 @@ vault_retry_join:
 
 ```
 
-## Ansible Playbook Çalıştırma
+## 🚀 Ansible Playbook Çalıştırma
 
 host_vars, group_vars ve inventories düzenlemerini sisteminize göre sağladıktan sonra playbook'u çalıştırınız. Playbook çalıştırılmadan önce sunucularda *curl*, *sshpass*, *wget*, *sudo* yüklü olması gerekmektedir.
 
@@ -86,7 +86,7 @@ host_vars, group_vars ve inventories düzenlemerini sisteminize göre sağladık
 ansible-playbook -i inventories/hosts.ini site.yml
 ```
 
-## DEBUG Mode için
+### DEBUG Mode için
 
 ```
 ansible-playbook -i inventories/hosts.ini site.yml -vvv
