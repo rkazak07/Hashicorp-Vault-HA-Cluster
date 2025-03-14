@@ -83,7 +83,7 @@ host_vars, group_vars ve inventories düzenlemerini sisteminize göre sağladık
 ansible-playbook -i inventories/hosts.ini site.yml
 ```
 
-### DEBUG Mode için
+DEBUG Modu için
 
 ```
 ansible-playbook -i inventories/hosts.ini site.yml -vvv
