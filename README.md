@@ -3,8 +3,8 @@
 ## Bu doküman, HashiCorp Vault'un Ansible ile Debian 12 ve Ubuntu sistemlerinde nasıl kurulup yönetileceğini anlatır.
 
 🚀 Desteklenen İşletim Sistemleri
-✅ Debian 12
-✅ Ubuntu (22.04, 24.04)
+* ✅ Debian 12
+* ✅ Ubuntu (22.04, 24.04)
 
 📌 Gereksinimler
 Ansible (2.10 veya üstü)
