@@ -1,4 +1,4 @@
-# Eğer sertifikalar kendinize ait ise "roles/vault/files"  altına sertifikaları bırakınız. Ayrıca bu yaml dosyası içerisinde sertifika isimlerini "roles/vault/files" içerisinde bulunan sertifika isimleri ile aynı yapınız.
+# Eğer sertifikalar kendinize ait ise "roles/vault/files"  altına sertifikaları bırakınız. Sertifika isimlerini değiştirmeyiniz.
 # leader_api_addr kısmını hostname'e göre düzenleyiniz... Aşağıda örnek yapı paylaştım.
 
 keepalived_state: BACKUP
