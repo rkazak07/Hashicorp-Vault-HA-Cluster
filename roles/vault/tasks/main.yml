@@ -1,0 +1,189 @@
+---
+- name: Install lsb-release
+  apt:
+    name: lsb-release
+    state: present
+    update_cache: yes
+
+- name: "Add HashiCorp GPG key"
+  shell: |
+    wget -O - https://apt.releases.hashicorp.com/gpg | \
+    gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+  args:
+    creates: /usr/share/keyrings/hashicorp-archive-keyring.gpg
+
+- name: Check if HashiCorp repo is already added
+  stat:
+    path: /etc/apt/sources.list.d/hashicorp.list
+  register: hashicorp_repo
+
+
+- name: "Add HashiCorp apt repository"
+  shell: |
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] \
+    https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+  when: not hashicorp_repo.stat.exists
+
+- name: Check if Vault is already installed
+  command: dpkg -l | grep vault
+  register: vault_installed
+  failed_when: false
+  changed_when: false
+
+- name: "Install Vault"
+  shell: "sudo apt update -y ; sudo apt install -y {{ vault_version }}"
+  when: vault_installed.rc != 0
+
+- name: "Set Vault-specific sysctl parameters"
+  sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+    state: present
+  loop: "{{ vault_sysctl_vars|dict2items }}"
+  notify:
+    - reload sysctl
+
+- name: "Create Vault TLS directory"
+  file:
+    path: "{{ vault_tls_path }}"
+    state: directory
+    owner: vault
+    group: vault
+    mode: '0755'
+
+# self signed sertifika adımı
+
+- name: "Generate self-signed certificates (self_signed = true)"
+  block:
+    - name: "Generate CA private key"
+      command: "openssl genrsa -out vault.key 2048"
+      args:
+        chdir: "{{ vault_tls_path }}"
+        creates: "{{ vault_tls_path }}/vault.key"
+      when: self_signed | bool == true
+
+    - name: "Create self-signed CA certificate"
+      command: >
+        openssl req -x509 -new -nodes
+        -key vault.key
+        -subj "/CN=*.{{ vault_domain_name }}"
+        -days {{ self_signed_cert_days }}
+        -out ca.crt
+      args:
+        chdir: "{{ vault_tls_path }}"
+        creates: "{{ vault_tls_path }}/ca.crt"
+      when: self_signed | bool == true
+
+    - name: "Generate Server key"
+      command: openssl genrsa -out server.key 2048
+      args:
+        chdir: "{{ vault_tls_path }}"
+        creates: "{{ vault_tls_path }}/server.key"
+      when: self_signed | bool == true
+
+
+# self signed sertifika icin gelistirmeye devam edilecek...
+# csr.conf'a göre sertifikayıp 1. sunucuda üretip tüm sunuculara dağıtacağız.
+
+- name: "Copy TLS certificates from Ansible controller"
+  copy:
+    src: "{{ item }}"
+    dest: "{{ vault_tls_path }}/{{ item }}"
+    owner: vault
+    group: vault
+    mode: '777'
+  loop:
+    - ca.crt
+    - tls.crt
+    - tls.key
+  when: not self_signed | bool
+
+- name: "Set permissions for TLS files"
+  file:
+    path: "{{ vault_tls_path }}"
+    recurse: yes
+    owner: vault
+    group: vault
+    mode: '777'
+
+- name: "Trust Certificate Authority"
+  shell: cp -r {{ vault_tls_path }}/ca.crt  /usr/local/share/ca-certificates/vault-ca.crt && sudo update-ca-certificates
+
+- name: "Create vault config directory"
+  file:
+    path: /etc/vault.d
+    state: directory
+    owner: vault
+    group: vault
+    mode: '0755'
+
+- name: "Deploy vault.hcl"
+  template:
+    src: vault.hcl.j2
+    dest: /etc/vault.d/vault.hcl
+    owner: vault
+    group: vault
+    mode: '0644'
+
+- name: "Create raft data directory"
+  file:
+    path: "{{ vault_raft_path }}"
+    state: directory
+    owner: vault
+    group: vault
+    mode: '0755'
+
+- name: "Enable & Start Vault service"
+  systemd:
+    name: vault
+    enabled: yes
+    state: started
+
+- name: "Check if vault_init.json exists"
+  stat:
+    path: "{{ vault_key_path }}"
+  register: vault_init_file
+
+- name: "Check Vault status"
+  shell: vault status -address=https://127.0.0.1:8200 -tls-skip-verify -format=json
+  register: vault_status
+  failed_when: false
+  changed_when: false
+
+- name: "Initialize Vault cluster (only first node)"
+  command: >
+    vault operator init -address=https://127.0.0.1:8200 -tls-skip-verify
+    -key-shares={{ vault_init_keys }}
+    -key-threshold={{ vault_init_threshold }}
+    -format=json
+  register: vault_init_output
+  when:
+    - inventory_hostname == groups['vault'][0]
+    - (vault_status.stdout | from_json).initialized == false
+
+- name: "Save Vault init output to file (only first node)"
+  copy:
+    content: "{{ vault_init_output.stdout }}"
+    dest: "{{ vault_key_path }}"
+    mode: '0600'
+  when:
+    - inventory_hostname == groups['vault'][0]
+    - (vault_status.stdout | from_json).initialized == false
+
+- name: "Read vault_init.json from first node (for all nodes)"
+  shell: cat "{{ vault_key_path }}"
+  delegate_to: "{{ groups['vault'][0] }}"
+  register: remote_vault_keys
+  run_once: true
+
+- name: "Set Vault unseal keys fact"
+  set_fact:
+    vault_unseal_keys: "{{ remote_vault_keys.stdout | from_json }}"
+  run_once: true
+
+- name: "Unseal Vault nodes"
+  shell: |
+    vault operator unseal -address=https://127.0.0.1:8200 -tls-skip-verify {{ item }}
+  loop: "{{ vault_unseal_keys.unseal_keys_b64[0:vault_init_threshold] }}"
+  when:
+    - (vault_status.stdout | from_json).sealed

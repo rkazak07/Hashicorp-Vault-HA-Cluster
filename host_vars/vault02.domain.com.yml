@@ -1,0 +1,14 @@
+# Eğer sertifikalar kendinize ait ise "roles/vault/files"  altına sertifikaları bırakınız. Ayrıca bu yaml dosyası içerisinde sertifika isimlerini "roles/vault/files" içerisinde bulunan sertifika isimleri ile aynı yapınız.
+# leader_api_addr kısmını hostname'e göre düzenleyiniz... Aşağıda örnek yapı paylaştım.
+
+keepalived_state: BACKUP
+keepalived_priority: 100
+vault_retry_join:
+  - leader_api_addr: "https://vault01.{{ vault_domain_name }}:8200"
+    leader_ca_cert_file: "{{ vault_tls_path }}/ca.crt"
+    leader_client_cert_file: "{{ vault_tls_path }}/tls.crt"
+    leader_client_key_file: "{{ vault_tls_path }}/tls.key"
+  - leader_api_addr: "https://vault03.{{ vault_domain_name }}:8200"
+    leader_ca_cert_file: "{{ vault_tls_path }}/ca.crt"
+    leader_client_cert_file: "{{ vault_tls_path }}/tls.crt"
+    leader_client_key_file: "{{ vault_tls_path }}/tls.key"

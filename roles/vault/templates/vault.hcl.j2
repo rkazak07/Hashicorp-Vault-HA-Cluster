@@ -1,0 +1,29 @@
+storage "raft" {
+  path = "{{ vault_raft_path }}"
+  node_id = "{{ inventory_hostname }}"
+  performance_multiplier = 2
+
+ {% for join in vault_retry_join %}
+  retry_join {
+    leader_api_addr          = "{{ join.leader_api_addr }}"
+    leader_ca_cert_file      = "{{ join.leader_ca_cert_file }}"
+    leader_client_cert_file  = "{{ join.leader_client_cert_file }}"
+    leader_client_key_file   = "{{ join.leader_client_key_file }}"
+  }
+  {% endfor %}
+}
+
+listener "tcp" {
+  address       = "0.0.0.0:8200"
+  tls_disable   = "false"
+  tls_cert_file = "{{ vault_tls_path }}/tls.crt"
+  tls_key_file  = "{{ vault_tls_path }}/tls.key"
+}
+
+api_addr      = "https://{{ inventory_hostname }}:8200"
+cluster_addr  = "https://{{ inventory_hostname }}:8201"
+disable_mlock = false
+cache_size = {{ (ansible_memtotal_mb * 0.6 * 1024 * 1024) | int }}
+ui            = true
+log_level     = "{{vault_log_level}}"
+cluster_name  = "{{ vault_cluster_name }}"

@@ -1,0 +1,25 @@
+---
+- name: "Install keepalived"
+  apt:
+    name: keepalived
+    state: present
+    update_cache: yes
+
+- name: "Deploy vault-health check script"
+  copy:
+    src: vault-health
+    dest: /etc/init.d/vault-health
+    mode: '0755'
+
+- name: "Deploy keepalived configuration"
+  template:
+    src: keepalived.conf.j2
+    dest: /etc/keepalived/keepalived.conf
+  notify:
+    - restart keepalived
+
+- name: "Ensure keepalived is running"
+  systemd:
+    name: keepalived
+    enabled: yes
+    state: started

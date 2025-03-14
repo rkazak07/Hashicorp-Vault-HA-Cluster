@@ -1,0 +1,106 @@
+
+# Buradaki domain ismi uygulama erişimi ve configlerde kullanılacaktır, kullanılan sertifika ile uyumluluğuna dikkat ediniz.
+vault_domain_name: "domain.com"
+
+# keepalived servisi için virtual ip adresini belirtiniz.
+vault_virtual_ip_address: "192.168.117.200"
+
+# /etc/hosts dosyası için domain ve sunucu isimlerine göre düzenleme yapınız. Domain isimlerini tanımlarken sertifika ile uyumluluğunu kontrol ediniz.
+hosts_entries:
+  - ip: "192.168.117.133"
+    fqdn: "vault01.domain.com"
+    short: "vault01"
+  - ip: "192.168.117.134"
+    fqdn: "vault02.domain.com"
+    short: "vault02"
+  - ip: "192.168.117.135"
+    fqdn: "vault03.domain.com"
+    short: "vault03"
+  - ip: "192.168.117.200" # virtual ip address
+    fqdn: "vault.domain.com"
+    short: "vault"
+
+# iptables kurulumu ile devam etmek için iptables_install parametresini true yapınız. mevcut firewall'unuz varsa false yapınız.
+# iptables kurallarını sunucu ip adreslerine göre düzenlemeliyiz. Virtual ip adresini dahil etmelisiniz.
+iptables_install: true
+iptables_rules_v4:
+  - "-A INPUT -p tcp -m tcp --dport 22 -j ACCEPT"
+  - "-A INPUT -p tcp -m tcp --dport 443 -j ACCEPT"
+  - "-A INPUT -p tcp -m tcp --dport 8200 -j ACCEPT"
+  - "-A INPUT -s 192.168.117.133/32 -p tcp -m tcp -j ACCEPT"
+  - "-A INPUT -s 192.168.117.134/32 -p tcp -m tcp -j ACCEPT"
+  - "-A INPUT -s 192.168.117.135/32 -p tcp -m tcp -j ACCEPT"
+  - "-A INPUT -s 192.168.117.133/32 -p udp -m udp -j ACCEPT"
+  - "-A INPUT -s 192.168.117.134/32 -p udp -m udp -j ACCEPT"
+  - "-A INPUT -s 192.168.117.135/32 -p udp -m udp -j ACCEPT"
+
+# Vault sunucularına uygulanacak sysctl parametreleri, sunucu kaynaklarınıza göre revize etmelisiniz.
+vault_sysctl_vars:
+  "vm.swappiness": 0
+  "vm.vfs_cache_pressure": 75
+  "vm.dirty_background_ratio": 5
+  "vm.dirty_ratio": 60
+  "vm.max_map_count": 262144
+  "fs.file-max": 262144
+  "fs.suid_dumpable": 0
+  #"net.core.wmem_default": 25165824
+  #"net.core.rmem_default": 25165824
+  #"net.core.wmem_max": 25165824
+  #"net.core.rmem_max": 25165824
+  #"net.ipv4.tcp_wmem": "20480 12582912 25165824"
+  #"net.ipv4.tcp_rmem": "20480 12582912 25165824"
+  #"net.ipv4.tcp_mem": "65536 25165824 262144"
+  #"net.ipv4.udp_mem": "65536 25165824 262144"
+  #"net.ipv4.udp_wmem_min": 16384
+  #"net.ipv4.udp_rmem_min": 16384
+  #"net.ipv4.tcp_window_scaling": 1
+  #"net.ipv4.tcp_max_syn_backlog": 10240
+  #"net.core.netdev_max_backlog": 65536
+  #"net.core.optmem_max": 25165824
+  #"net.ipv4.tcp_synack_retries": 2
+  #"net.ipv4.ip_local_port_range": "2048 65535"
+  #"net.ipv4.tcp_rfc1337": 1
+  #"net.ipv4.tcp_fin_timeout": 15
+  #"net.core.somaxconn": 4096
+  #"net.ipv4.tcp_syncookies": 1
+  #"net.ipv4.icmp_echo_ignore_broadcasts": 1
+  #"net.ipv4.icmp_ignore_bogus_error_responses": 1
+
+
+# Chrony NTP Sunucuları
+ntp_servers:
+  - "0.tr.pool.ntp.org"
+  - "1.tr.pool.ntp.org"
+
+# Vault Sürümünü belirtiniz. farklı bir sürüm tag'i içi "https://releases.hashicorp.com/vault/" adresini kullanabilirsiniz.
+vault_version: "vault=1.18.5-1"
+vault_init_keys: 5
+vault_init_threshold: 2
+vault_cluster_name: "SAMPLE-CLUSTER"
+vault_log_level: "info" # trace,info,debug,error,warning
+
+# Self-signed (true) ya da wildcard (false)
+# Bu adımdaki self signed kısmı geliştirilme sürecindedir. "false" olarak işaretledikten sonra "roles/vault/files" altına sertifikalarımı bırakabiliriz. dosya isimlendirmeleri için örnek sertifika bırakıldı.
+self_signed: false
+self_signed_cert_days: "730"
+
+# self signed sertifika için ihtiyaç duyulan san bilgilerini belirtiniz.
+vault_tls_alt_names:
+  dns:
+    - "*.domain.com"
+    - "vaul01.domain.com"
+    - "vaul02.domain.com"
+    - "vaul03.domain.com"
+    - "vault.domain.com"
+  ip:
+    - "127.0.0.1"
+    - "192.168.117.133"
+    - "192.168.117.134"
+    - "192.168.117.135"
+    - "192.168.117.200"
+
+ 
+# Vault TLS ve raft path'i sisteminize göre düzenleyebilirsiniz. "vault_key_path" 1. vault sunucusu içerisinde belirtilen lokasyona unseal keylerini göndermesi için kullanılmaktadır.
+vault_tls_path: "/opt/vault-tls"
+vault_raft_path: "/opt/datavault/raft"
+vault_key_path: "/etc/vault.d/vault_init.json"

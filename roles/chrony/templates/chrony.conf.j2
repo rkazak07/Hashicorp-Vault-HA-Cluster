@@ -1,0 +1,8 @@
+{% for server in ntp_servers %}
+server {{ server }} iburst
+{% endfor %}
+
+driftfile /var/lib/chrony/drift
+log tracking measurements statistics
+logdir /var/log/chrony
+keyfile /etc/chrony/chrony.keys

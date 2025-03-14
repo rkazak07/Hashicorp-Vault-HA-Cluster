@@ -1,0 +1,11 @@
+#!/bin/bash
+
+VAULT_HEALTH_URL=$1
+
+response=$(curl -sk $VAULT_HEALTH_URL/v1/sys/leader)
+
+if echo $response | grep -q '"is_self":true'; then
+    exit 0
+else
+    exit 1
+fi
