@@ -77,7 +77,7 @@ vault_retry_join:
 
 ## 🚀 Ansible Playbook Çalıştırma
 
-host_vars, group_vars ve inventories düzenlemerini sisteminize göre sağladıktan sonra playbook'u çalıştırınız. Playbook çalıştırılmadan önce sunucularda *curl*, *sshpass*, *wget*, *sudo* yüklü olması gerekmektedir.
+host_vars, group_vars ve inventories düzenlemerini sisteminize göre sağladıktan sonra playbook'u çalıştırınız. Playbook çalıştırılmadan önce sunucularda *curl*, *sshpass*, *sudo* yüklü olması gerekmektedir.
 
 ```
 ansible-playbook -i inventories/hosts.ini site.yml
@@ -87,4 +87,9 @@ DEBUG Modu için
 
 ```
 ansible-playbook -i inventories/hosts.ini site.yml -vvv
+```
+## 🚀 Tüm yapılandırmaları silmek için
+
+```
+ansible-playbook -i inventories/hosts.ini uninstall.yml
 ```

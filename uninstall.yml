@@ -1,0 +1,81 @@
+---
+- name: Uninstall Vault and related components
+  hosts: vault
+  become: yes
+  tasks:
+  
+    - name: Stop and disable Vault service
+      systemd:
+        name: vault
+        state: stopped
+        enabled: no
+      ignore_errors: yes
+
+    - name: Remove Vault package
+      apt:
+        name: vault
+        state: absent
+      ignore_errors: yes
+
+    - name: Remove Vault configuration files
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - {{vault_tls_path}}
+        - {{vault_raft_path}}
+        - /etc/vault.d
+        - /usr/local/bin/vault
+        - /var/log/vault.log
+        - /usr/share/keyrings/hashicorp-archive-keyring.gpg
+        - /etc/apt/sources.list.d/hashicorp.list
+      ignore_errors: yes
+
+    - name: Remove Vault system user
+      user:
+        name: vault
+        state: absent
+      ignore_errors: yes
+
+    - name: Stop and disable Keepalived
+      systemd:
+        name: keepalived
+        state: stopped
+        enabled: no
+      ignore_errors: yes
+
+    - name: Remove Keepalived package
+      apt:
+        name: keepalived
+        state: absent
+      ignore_errors: yes
+
+    - name: Remove Keepalived configuration files
+      file:
+        path: "/etc/keepalived/"
+        state: absent
+      ignore_errors: yes
+
+    - name: Remove iptables rules
+      file:
+        path: "/etc/iptables/rules.v4"
+        state: absent
+      when: iptables_install | default(false)
+
+    - name: Flush iptables rules
+      shell: iptables -F
+      ignore_errors: yes
+      when: iptables_install | default(false)
+
+    - name: Remove iptables package (if installed)
+      apt:
+        name: 
+          - iptables
+          - iptables-persistent
+        state: absent
+      ignore_errors: yes
+      when: iptables_install | default(false)
+
+    - name: Reboot servers (optional)
+      reboot:
+      when: reboot_after_uninstall | default(false)

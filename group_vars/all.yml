@@ -104,3 +104,6 @@ vault_tls_alt_names:
 vault_tls_path: "/opt/vault-tls"
 vault_raft_path: "/opt/datavault/raft"
 vault_key_path: "/etc/vault.d/vault_init.json"
+
+# Tüm yapılandırmaları sildikten sonra reboot işlemi için aşağıdaki parametreyi true yapınız.
+reboot_after_uninstall: false
