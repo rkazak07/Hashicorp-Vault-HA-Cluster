@@ -10,7 +10,8 @@
 * Ansible (2.10 veya üstü)
 * SSH bağlantısı (Root veya sudo yetkili kullanıcı)
 
-### 🛠 Değişkenlerin Düzenlenmesi
+## 🛠 Değişkenlerin Düzenlenmesi
+
 ### 📌 Inventories Dosyası (hosts.ini)
 Sunucularınızı ve IP adreslerini aşağıdaki gibi belirtebilirsiniz:
 
