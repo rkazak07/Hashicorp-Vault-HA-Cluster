@@ -1,0 +1,45 @@
+---
+- name: "Create Vault audit log directory"
+  shell: sudo mkdir -p {{vault_audit_path}} && sudo touch {{vault_audit_path}}/vault_audit.log && sudo chown -R vault:vault {{vault_audit_path}}
+
+- name: "Retrieve Vault root token"
+  set_fact:
+    vault_root_token: "{{ lookup('file', vault_key_path) | from_json | json_query('root_token') }}"
+
+- name: "Login to Vault using root token"
+  command: vault login {{ vault_root_token }}
+  environment:
+    VAULT_ADDR: "https://127.0.0.1:8200"
+    VAULT_SKIP_VERIFY: "true"
+  become: yes
+
+- name: "Enable Vault Audit Logging"
+  command: vault audit enable file file_path={{vault_audit_path}}/vault_audit.log
+  environment:
+    VAULT_ADDR: "https://127.0.0.1:8200"
+    VAULT_SKIP_VERIFY: "true"
+  become: yes
+  when: inventory_hostname == groups['vault'][0]
+
+- name: "Configure logrotate for Vault audit logs"
+  copy:
+    dest: "{{auditlog_logrotate_path}}"
+    content: |
+      {{vault_audit_path}}/vault_audit.log {
+          daily
+          rotate {{ auditlog_retention_days }}
+          compress
+          delaycompress
+          notifempty
+          create 0640 vault vault
+          postrotate
+          /usr/bin/killall -HUP vault
+          endscript
+      }
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: "Test logrotate configuration"
+  command: sudo logrotate -v {{auditlog_logrotate_path}}
+  become: yes

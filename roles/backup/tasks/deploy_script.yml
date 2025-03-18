@@ -1,0 +1,9 @@
+---
+- name: "Deploy backup script"
+  copy:
+    src: "files/vault-backup.py"
+    dest: "/usr/local/bin/vault-backup.py"
+    owner: root
+    group: root
+    mode: '0755'
+  when: backup_enabled | default(false) | bool

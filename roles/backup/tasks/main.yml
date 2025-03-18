@@ -1,0 +1,11 @@
+- name: "Run backup role only if enabled"
+  block:
+    - name: "Include setup AppRole"
+      include_tasks: setup_approle.yml
+
+    - name: "Include deploy script"
+      include_tasks: deploy_script.yml
+
+    - name: "Include configure crontab"
+      include_tasks: configure_cron.yml
+  when: backup_enabled | default(false) | bool

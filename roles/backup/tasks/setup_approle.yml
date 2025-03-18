@@ -1,0 +1,98 @@
+---
+- name: "Retrieve Vault root token"
+  set_fact:
+    vault_root_token: "{{ lookup('file', vault_key_path) | from_json | json_query('root_token') }}"
+
+- name: "Login to Vault using root token"
+  command: vault login {{ vault_root_token }}
+  environment:
+    VAULT_ADDR: "https://127.0.0.1:8200"
+    VAULT_SKIP_VERIFY: "true"
+  become: yes
+  when:
+    - inventory_hostname == groups['vault'][0]
+
+- name: "Enable AppRole authentication"
+  command: vault auth enable approle
+  environment:
+    VAULT_ADDR: "https://127.0.0.1:8200"
+    VAULT_SKIP_VERIFY: "true"
+  become: yes
+  when:
+    - inventory_hostname == groups['vault'][0]
+
+- name: "Create Vault backup policy"
+  command: >
+    vault policy write vault-backup-policy -<<EOF
+    path "sys/storage/raft/snapshot" {
+      capabilities = ["read"]
+    }
+    path "sys/storage/raft/snapshot/*" {
+      capabilities = ["create", "update"]
+    }
+    EOF
+  environment:
+    VAULT_ADDR: "https://127.0.0.1:8200"
+    VAULT_SKIP_VERIFY: "true"
+  become: yes
+  when:
+    - inventory_hostname == groups['vault'][0]
+
+- name: "Create Vault backup AppRole"
+  command: >
+    vault write auth/approle/role/vault-backup-role \
+      token_policies=vault-backup-policy,default \
+      token_max_ttl=20m
+  environment:
+    VAULT_ADDR: "https://127.0.0.1:8200"
+    VAULT_SKIP_VERIFY: "true"
+  become: yes
+  when:
+    - inventory_hostname == groups['vault'][0]
+
+- name: "Retrieve Role ID"
+  command: vault read -format=json auth/approle/role/vault-backup-role/role-id
+  register: role_id
+  changed_when: false
+  environment:
+    VAULT_ADDR: "https://127.0.0.1:8200"
+    VAULT_SKIP_VERIFY: "true"
+  become: yes
+  when:
+    - inventory_hostname == groups['vault'][0]
+
+- name: "Retrieve Secret ID"
+  command: vault write -force -format=json auth/approle/role/vault-backup-role/secret-id
+  register: secret_id
+  changed_when: false
+  environment:
+    VAULT_ADDR: "https://127.0.0.1:8200"
+    VAULT_SKIP_VERIFY: "true"
+  become: yes
+  when:
+    - inventory_hostname == groups['vault'][0]
+
+- name: "Store Role ID and Secret ID"
+  copy:
+    content: >
+      {
+        "ROLE_ID": "{{ role_id.stdout | from_json | json_query('data.role_id') }}",
+        "SECRET_ID": "{{ secret_id.stdout | from_json | json_query('data.secret_id') }}"
+      }
+    dest: "/etc/vault.d/vaultbackup-approle.json"
+    owner: root
+    group: root
+    mode: '0600'
+  when:
+    - inventory_hostname == groups['vault'][0]
+
+- name: "Distribute vaultbackup-approle.json to all nodes"
+  copy:
+    src: "/etc/vault.d/vaultbackup-approle.json"
+    dest: "/etc/vault.d/vaultbackup-approle.json"
+    owner: root
+    group: root
+    mode: '0600'
+  delegate_to: "{{ item }}"
+  loop: "{{ groups['vault'] }}"
+  when: inventory_hostname == groups['vault'][0]

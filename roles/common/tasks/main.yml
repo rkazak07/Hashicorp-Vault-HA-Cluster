@@ -10,6 +10,7 @@
       - gnupg2
       - gnupg
       - wget
+      - python3-pip
     state: present
     update_cache: yes
 

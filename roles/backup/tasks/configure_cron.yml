@@ -1,0 +1,23 @@
+---
+- name: "Check if this node is the Vault leader"
+  command: vault status -format=json
+  register: vault_status
+  changed_when: false
+  environment:
+    VAULT_ADDR: "https://127.0.0.1:8200"
+    VAULT_SKIP_VERIFY: "true"
+  become: yes
+
+- name: "Schedule Vault backup in crontab (only on leader node)"
+  cron:
+    name: "Vault Backup"
+    job: "/usr/local/bin/vault-backup.py"
+    user: "root"
+    minute: "{{ backup_cron_schedule.split()[0] }}"
+    hour: "{{ backup_cron_schedule.split()[1] }}"
+    day: "{{ backup_cron_schedule.split()[2] }}"
+    month: "{{ backup_cron_schedule.split()[3] }}"
+    weekday: "{{ backup_cron_schedule.split()[4] }}"
+  when:
+    - backup_enabled | default(false) | bool
+    - (vault_status.stdout | from_json)['leader'] == inventory_hostname

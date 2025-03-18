@@ -17,7 +17,7 @@ hosts_entries:
     fqdn: "vault03.domain.com"
     short: "vault03"
   - ip: "192.168.117.200" # virtual ip address
-    fqdn: "vault.domain.com"
+    fqdn: "vault.domain.com"  # vault domain adresi, uygulama erişimleri ve arayüz için kullanılacaktır.
     short: "vault"
 
 # iptables kurulumu ile devam etmek için iptables_install parametresini true yapınız. mevcut firewall'unuz varsa false yapınız.
@@ -104,6 +104,20 @@ vault_tls_alt_names:
 vault_tls_path: "/opt/vault-tls"
 vault_raft_path: "/opt/datavault/raft"
 vault_key_path: "/etc/vault.d/vault_init.json"
+vault_audit_path: "/var/log/vault" # Audit log dizinini belirtiniz. Sadece lider olan sunucu üzerinde audit loglar tutulacak. Lider değişikliklerine göz alarak sie ürününü düzenleyiniz.
+auditlog_retention_days: 7 # logrotate için auditlog rotasyon süresi
+auditlog_logrotate_path: "/etc/logrotate.d/vault_audit" # logrotate için oluşturulan config dizinini belirtiyoruz.
 
-# Tüm yapılandırmaları sildikten sonra reboot işlemi için aşağıdaki parametreyi true yapınız.
+
+# Backup yapısını aktif etmek için aşağıdaki  bilgileri oluşturunuz.
+backup_enabled: true # false yapılırsa backup yapısı oluşturulmayacaktır.
+backup_retention_days: 30  # Kaç adet backup saklanacağını belirtiyoruz.
+backup_path: /backup/vault-backup  # Backupların tutulacağı dizini oluşturuyoruz.
+backup_webhook_url: "https://example.webhook.office.com/webhookb2/5f05c96f-aa2d-4b5b-ac3a-79494a7533c4@9fb7cfb6-3533-4cb6-889d-45cb2869eb5c/IncomingWebhook/79bccb01a86049fe84ff5d9a456ac91d/c821ab39-2287-41cf-8b60-2c19688d464c"  # Backup bildirimleri için webhook
+backup_cron_schedule: "0 2 * * *"  # Her gün gece 02:00'de çalıştır. backuplar lider olan sunucunun crontab'ı üzerinde çalışır.
+backup_platform: "teams" # slack, teams, discord, generic olarak belirtiniz. Backup bildirimleri için formatı oluşturmaktadır.
+backup_domain_address: "https://vault.domain.com:8200" # Bu adresi virtual ip üzerinde tanımlı olan domain adresine göre ayarlayınız. virtual ip üzerinde veya etc/hosts dosyasında bu adresi bulamazsa backup almayacaktır.
+
+
+# Tüm yapılandırmaları sildikten sonra reboot işlemi için aşağıdaki parametreyi true yapınız. Bu parametre sadece "uninstall.yml" ile birlikte çalışmaktadır.
 reboot_after_uninstall: false
