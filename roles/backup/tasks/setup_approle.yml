@@ -12,7 +12,16 @@
   when:
     - inventory_hostname == groups['vault'][0]
 
-- name: "Enable AppRole authentication"
+- name: "Check if AppRole authentication is already enabled"
+  command: vault auth list -format=json
+  environment:
+    VAULT_ADDR: "https://127.0.0.1:8200"
+    VAULT_SKIP_VERIFY: "true"
+  register: vault_auth_list
+  changed_when: false
+  become: yes
+
+- name: "Enable AppRole authentication if not already enabled"
   command: vault auth enable approle
   environment:
     VAULT_ADDR: "https://127.0.0.1:8200"
@@ -20,10 +29,11 @@
   become: yes
   when:
     - inventory_hostname == groups['vault'][0]
+    - "'approle/' not in (vault_auth_list.stdout | from_json)"
 
 - name: "Create Vault backup policy"
-  command: >
-    vault policy write vault-backup-policy -<<EOF
+  shell: |
+    cat <<EOF | vault policy write vault-backup-policy -
     path "sys/storage/raft/snapshot" {
       capabilities = ["read"]
     }

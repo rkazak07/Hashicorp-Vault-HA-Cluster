@@ -16,19 +16,33 @@
         name: vault
         state: absent
       ignore_errors: yes
+    
+    - name: Remove Vault service files
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - "/etc/systemd/system/vault.service"
+        - "/lib/systemd/system/vault.service"
+      ignore_errors: yes
+
+    - name: Reload systemd daemon
+      systemd:
+        daemon_reload: yes
 
     - name: Remove Vault configuration files
       file:
         path: "{{ item }}"
         state: absent
+        recurse: yes
       loop:
-        - {{vault_tls_path}}
-        - {{vault_raft_path}}
-        - /etc/vault.d
-        - /usr/local/bin/vault
-        - /var/log/vault.log
-        - /usr/share/keyrings/hashicorp-archive-keyring.gpg
-        - /etc/apt/sources.list.d/hashicorp.list
+        - "{{ vault_tls_path}}"
+        - "{{ vault_raft_path}}"
+        - "/etc/vault.d"
+        - "/usr/local/bin/vault"
+        - "/var/log/vault.log"
+        - "/usr/share/keyrings/hashicorp-archive-keyring.gpg"
+        - "/etc/apt/sources.list.d/hashicorp.list"
       ignore_errors: yes
 
     - name: Remove Vault system user
@@ -54,28 +68,40 @@
       file:
         path: "/etc/keepalived/"
         state: absent
+        recurse: yes
       ignore_errors: yes
 
     - name: Remove iptables rules
       file:
         path: "/etc/iptables/rules.v4"
         state: absent
-      when: iptables_install | default(false)
+      when: "{{ iptables_install | default(false) | bool }}"
 
     - name: Flush iptables rules
       shell: iptables -F
       ignore_errors: yes
-      when: iptables_install | default(false)
+      when: "{{ iptables_install | default(false) | bool }}"
 
-    - name: Remove iptables package (if installed)
+    - name: Remove iptables and vault package (if installed)
       apt:
         name: 
           - iptables
           - iptables-persistent
+          - vault
         state: absent
       ignore_errors: yes
-      when: iptables_install | default(false)
+      when: "{{ iptables_install | default(false) | bool }}"
 
-    - name: Reboot servers (optional)
-      reboot:
-      when: reboot_after_uninstall | default(false)
+    - name: Remove auditlog files (Recursive Delete)
+      file:
+        path: "{{ vault_audit_path }}"
+        state: absent
+        recurse: yes
+      ignore_errors: yes
+
+    - name: Remove backup files (Recursive Delete)
+      file:
+        path: "{{ backup_path }}"
+        state: absent
+        recurse: yes
+      ignore_errors: yes

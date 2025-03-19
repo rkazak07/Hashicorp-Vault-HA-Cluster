@@ -1,6 +1,19 @@
 ---
-- name: "Create Vault audit log directory"
-  shell: sudo mkdir -p {{vault_audit_path}} && sudo touch {{vault_audit_path}}/vault_audit.log && sudo chown -R vault:vault {{vault_audit_path}}
+- name: "Ensure Vault audit log directory exists"
+  file:
+    path: "{{ vault_audit_path }}"
+    state: directory
+    owner: vault
+    group: vault
+    mode: '0755'
+
+- name: "Ensure Vault audit log file exists"
+  file:
+    path: "{{ vault_audit_path }}/vault_audit.log"
+    state: touch
+    owner: vault
+    group: vault
+    mode: '0640'
 
 - name: "Retrieve Vault root token"
   set_fact:
@@ -12,20 +25,33 @@
     VAULT_ADDR: "https://127.0.0.1:8200"
     VAULT_SKIP_VERIFY: "true"
   become: yes
+  register: vault_login
+  changed_when: false
 
-- name: "Enable Vault Audit Logging"
-  command: vault audit enable file file_path={{vault_audit_path}}/vault_audit.log
+- name: "Check if Vault audit logging is already enabled"
+  command: vault audit list -format=json
+  environment:
+    VAULT_ADDR: "https://127.0.0.1:8200"
+    VAULT_SKIP_VERIFY: "true"
+  register: vault_audit_list
+  changed_when: false
+  become: yes
+
+- name: "Enable Vault Audit Logging if not already enabled"
+  command: vault audit enable file file_path={{ vault_audit_path }}/vault_audit.log
   environment:
     VAULT_ADDR: "https://127.0.0.1:8200"
     VAULT_SKIP_VERIFY: "true"
   become: yes
-  when: inventory_hostname == groups['vault'][0]
+  when:
+    - inventory_hostname == groups['vault'][0]
+    - "'file/' not in (vault_audit_list.stdout | from_json)"
 
-- name: "Configure logrotate for Vault audit logs"
+- name: "Ensure logrotate configuration exists for Vault audit logs"
   copy:
-    dest: "{{auditlog_logrotate_path}}"
+    dest: "{{ auditlog_logrotate_path }}"
     content: |
-      {{vault_audit_path}}/vault_audit.log {
+      {{ vault_audit_path }}/vault_audit.log {
           daily
           rotate {{ auditlog_retention_days }}
           compress
@@ -41,5 +67,5 @@
     mode: '0644'
 
 - name: "Test logrotate configuration"
-  command: sudo logrotate -v {{auditlog_logrotate_path}}
+  command: sudo logrotate -v {{ auditlog_logrotate_path }}
   become: yes
