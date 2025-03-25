@@ -105,9 +105,11 @@ ntp_servers:
 
 # Vault Sürümünü belirtiniz. farklı bir sürüm tag'i içi "https://releases.hashicorp.com/vault/" adresini kullanabilirsiniz.
 
-## debian/ubuntu için "vault=1.18.5-1" rhel/oel için "vault-1.18.5-1" olarak kullanınız.
-
-vault_version: "vault=1.18.5-1"
+## debian/ubuntu için ' vault_deb_version: "vault=1.18.5-1" ' değişkeni çalışacaktır.
+## Rhel/oel için: ' vault_rhel_version: "vault-1.18.5-1" ' değişkeni çalışacaktır.
+ 
+vault_deb_version: "vault=1.18.5-1" # debian/ubuntu
+vault_rhel_version: "vault-1.18.5-1" # rhel/oel
 vault_init_keys: 5
 vault_init_threshold: 2
 vault_cluster_name: "SAMPLE-CLUSTER"

@@ -36,7 +36,7 @@
   when: ansible_os_family == "Debian"
 
 - name: "Install Vault (Debian)"
-  shell: "sudo apt update -y && sudo apt install -y {{ vault_version }}"
+  shell: "sudo apt update -y && sudo apt install -y {{ vault_deb_version }}"
   when:
     - ansible_os_family == "Debian"
     - vault_installed_deb.rc != 0
@@ -56,7 +56,7 @@
   when: ansible_os_family == "RedHat"
 
 - name: "Install Vault (RedHat)"
-  shell: "sudo yum update -y && sudo yum install -y {{ vault_version }}"
+  shell: "sudo yum update -y && sudo yum install -y {{ vault_rhel_version }}"
   when:
     - ansible_os_family == "RedHat"
     - vault_installed_rpm.rc != 0
