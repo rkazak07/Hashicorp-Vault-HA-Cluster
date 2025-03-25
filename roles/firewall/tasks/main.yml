@@ -1,0 +1,69 @@
+
+- name: "Install iptables packages (Debian)"
+  apt:
+    name:
+      - iptables
+      - iptables-persistent
+    state: present
+    update_cache: yes
+  when:
+    - iptables_install | default(false) | bool
+    - ansible_os_family == "Debian"
+
+
+- name: "Deploy iptables rules file (Debian)"
+  template:
+    src: rules.v4.j2
+    dest: /etc/iptables/rules.v4
+    mode: '0644'
+  when:
+    - iptables_install | default(false) | bool
+    - ansible_os_family == "Debian"
+
+
+- name: "Apply iptables rules (Debian/Ubuntu)"
+  shell: iptables-restore < /etc/iptables/rules.v4
+  notify: save iptables rules
+  when:
+    - iptables_install | default(false) | bool
+    - ansible_os_family == "Debian"
+
+#  RedHat/CentOS (firewalld)
+
+- name: "Install firewalld (RedHat)"
+  yum:
+    name: firewalld
+    state: present
+  when:
+    - firewalld_install | default(false) | bool
+    - ansible_os_family == "RedHat"
+
+- name: "Enable and start firewalld service (RedHat)"
+  service:
+    name: firewalld
+    enabled: true
+    state: started
+  when:
+    - firewalld_install | default(false) | bool
+    - ansible_os_family == "RedHat"
+
+- name: "Configure firewalld rules (RedHat)"
+  firewalld:
+    port: "{{ item.port | default(omit) }}"
+    service: "{{ item.service | default(omit) }}"
+    source: "{{ item.source | default(omit) }}"
+    zone: "public"
+    permanent: true
+    state: "enabled"
+    immediate: true
+  with_items: "{{ firewalld_rules }}"
+  when:
+    - firewalld_install | default(false) | bool
+    - ansible_os_family == "RedHat"
+
+
+- name: "Stop Firewalld (RedHat)"
+  shell: sudo systemctl stop firewalld
+  when:
+    - firewalld_install | default(true) | bool
+    - ansible_os_family == "RedHat"

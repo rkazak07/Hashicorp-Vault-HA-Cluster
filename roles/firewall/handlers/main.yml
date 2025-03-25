@@ -1,0 +1,10 @@
+- name: save iptables rules
+  command: netfilter-persistent save
+
+- name: "Reload firewalld"
+  service:
+    name: firewalld
+    state: reloaded
+  when:
+    - firewalld_install | default(false) | bool
+    - ansible_os_family == "RedHat"

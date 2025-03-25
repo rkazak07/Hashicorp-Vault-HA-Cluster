@@ -1,9 +1,17 @@
 ---
-- name: "Install keepalived"
+- name: "Install keepalived (Debian/Ubuntu)"
   apt:
     name: keepalived
     state: present
     update_cache: yes
+  when: ansible_os_family == "Debian"
+
+
+- name: "Install keepalived (RedHat)"
+  yum:
+    name: keepalived
+    state: present
+  when: ansible_os_family == "RedHat"
 
 - name: "Deploy vault-health check script"
   copy:
@@ -17,6 +25,17 @@
     dest: /etc/keepalived/keepalived.conf
   notify:
     - restart keepalived
+  when:
+    - not dr_enabled | default(false) | bool
+
+- name: "Deploy DR keepalived config"
+  template:
+    src: keepalived-dr.conf.j2
+    dest: /etc/keepalived/keepalived.conf
+  notify:
+    - restart keepalived
+  when:
+    - dr_enabled | default(false) | bool
 
 - name: "Ensure keepalived is running"
   systemd:

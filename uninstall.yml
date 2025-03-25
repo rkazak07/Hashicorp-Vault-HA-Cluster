@@ -1,9 +1,8 @@
 ---
 - name: Uninstall Vault and related components
-  hosts: vault
+  hosts: "vault,vault_dr"
   become: yes
   tasks:
-  
     - name: Stop and disable Vault service
       systemd:
         name: vault
@@ -11,13 +10,21 @@
         enabled: no
       ignore_errors: yes
 
-    - name: Remove Vault package
+    - name: Remove Vault package (Debian)
       apt:
         name: vault
         state: absent
       ignore_errors: yes
-    
-    - name: Remove Vault service files
+      when: ansible_os_family == "Debian"
+
+    - name: Remove Vault package (RedHat)
+      yum:
+        name: vault
+        state: absent
+      ignore_errors: yes
+      when: ansible_os_family == "RedHat"
+
+    - name: Remove Vault systemd service files
       file:
         path: "{{ item }}"
         state: absent
@@ -36,13 +43,29 @@
         state: absent
         recurse: yes
       loop:
-        - "{{ vault_tls_path}}"
-        - "{{ vault_raft_path}}"
+        - "{{ vault_tls_path }}"
+        - "{{ vault_raft_path }}"
         - "/etc/vault.d"
         - "/usr/local/bin/vault"
         - "/var/log/vault.log"
+      ignore_errors: yes
+
+    - name: Remove Vault repo files (Debian)
+      file:
+        path: "{{ item }}"
+        state: absent
+        recurse: yes
+      loop:
         - "/usr/share/keyrings/hashicorp-archive-keyring.gpg"
         - "/etc/apt/sources.list.d/hashicorp.list"
+      when: ansible_os_family == "Debian"
+      ignore_errors: yes
+
+    - name: Remove HashiCorp repo file (RedHat)
+      file:
+        path: "/etc/yum.repos.d/hashicorp.repo"
+        state: absent
+      when: ansible_os_family == "RedHat"
       ignore_errors: yes
 
     - name: Remove Vault system user
@@ -58,11 +81,19 @@
         enabled: no
       ignore_errors: yes
 
-    - name: Remove Keepalived package
+    - name: Remove Keepalived package (Debian)
       apt:
         name: keepalived
         state: absent
       ignore_errors: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Remove Keepalived package (RedHat)
+      yum:
+        name: keepalived
+        state: absent
+      ignore_errors: yes
+      when: ansible_os_family == "RedHat"
 
     - name: Remove Keepalived configuration files
       file:
@@ -75,22 +106,47 @@
       file:
         path: "/etc/iptables/rules.v4"
         state: absent
-      when: "{{ iptables_install | default(false) | bool }}"
+      when:
+        - ansible_os_family == "Debian"
+        - iptables_install | default(false) | bool
+      ignore_errors: yes
 
     - name: Flush iptables rules
       shell: iptables -F
+      when:
+        - ansible_os_family == "Debian"
+        - iptables_install | default(false) | bool
       ignore_errors: yes
-      when: "{{ iptables_install | default(false) | bool }}"
 
-    - name: Remove iptables and vault package (if installed)
+    - name: Remove iptables packages (Debian)
       apt:
-        name: 
+        name:
           - iptables
           - iptables-persistent
-          - vault
         state: absent
       ignore_errors: yes
-      when: "{{ iptables_install | default(false) | bool }}"
+      when:
+        - ansible_os_family == "Debian"
+        - iptables_install | default(false) | bool
+
+    - name: Stop and disable firewalld
+      systemd:
+        name: firewalld
+        state: stopped
+        enabled: no
+      when:
+        - ansible_os_family == "RedHat"
+        - firewalld_install | default(false) | bool
+      ignore_errors: yes
+
+    - name: Remove firewalld package
+      yum:
+        name: firewalld
+        state: absent
+      when:
+        - ansible_os_family == "RedHat"
+        - firewalld_install | default(false) | bool
+      ignore_errors: yes
 
     - name: Remove auditlog files (Recursive Delete)
       file:
@@ -104,4 +160,12 @@
         path: "{{ backup_path }}"
         state: absent
         recurse: yes
+      ignore_errors: yes
+
+
+    - name: Reboot after uninstall
+      reboot:
+        msg: "Rebooting after Vault & components removal"
+        timeout: 30
+      when: reboot_after_uninstall | default(false) | bool
       ignore_errors: yes

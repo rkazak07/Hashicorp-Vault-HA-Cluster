@@ -1,10 +1,10 @@
 ---
 - name: "Site Playbook for All Servers"
-  hosts: all
+  hosts: vault
   become: yes
   roles:
     - common
-    - iptables
+    - firewall
     - chrony
     - vault
     - keepalived

@@ -1,38 +1,65 @@
 ---
-- name: Install lsb-release
+- name: "Install lsb-release (Debian)"
   apt:
     name: lsb-release
     state: present
     update_cache: yes
+  when: ansible_os_family == "Debian"
 
-- name: "Add HashiCorp GPG key"
+- name: "Add HashiCorp GPG key (Debian)"
   shell: |
     wget -O - https://apt.releases.hashicorp.com/gpg | \
     gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
   args:
     creates: /usr/share/keyrings/hashicorp-archive-keyring.gpg
+  when: ansible_os_family == "Debian"
 
-- name: Check if HashiCorp repo is already added
+- name: "Check if HashiCorp repo is already added (Debian)"
   stat:
     path: /etc/apt/sources.list.d/hashicorp.list
   register: hashicorp_repo
+  when: ansible_os_family == "Debian"
 
-
-- name: "Add HashiCorp apt repository"
+- name: "Add HashiCorp apt repository (Debian)"
   shell: |
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] \
     https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
-  when: not hashicorp_repo.stat.exists
+  when:
+    - ansible_os_family == "Debian"
+    - not hashicorp_repo.stat.exists
 
-- name: Check if Vault is already installed
+- name: "Check if Vault is already installed (Debian)"
   command: dpkg -l | grep vault
-  register: vault_installed
+  register: vault_installed_deb
   failed_when: false
   changed_when: false
+  when: ansible_os_family == "Debian"
 
-- name: "Install Vault"
-  shell: "sudo apt update -y ; sudo apt install -y {{ vault_version }}"
-  when: vault_installed.rc != 0
+- name: "Install Vault (Debian)"
+  shell: "sudo apt update -y && sudo apt install -y {{ vault_version }}"
+  when:
+    - ansible_os_family == "Debian"
+    - vault_installed_deb.rc != 0
+
+
+# RedHat/Oracle Linux
+
+- name: "Add HashiCorp yum repo (RedHat)"
+  shell: sudo yum install -y yum-utils && sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
+  when: ansible_os_family == "RedHat"
+
+- name: "Check if Vault is already installed (RedHat)"
+  shell: "rpm -qa | grep '^vault'"
+  register: vault_installed_rpm
+  failed_when: false
+  changed_when: false
+  when: ansible_os_family == "RedHat"
+
+- name: "Install Vault (RedHat)"
+  shell: "sudo yum update -y && sudo yum install -y {{ vault_version }}"
+  when:
+    - ansible_os_family == "RedHat"
+    - vault_installed_rpm.rc != 0
 
 - name: "Set Vault-specific sysctl parameters"
   sysctl:
@@ -51,8 +78,7 @@
     group: vault
     mode: '0755'
 
-# self signed sertifika adımı
-
+# Self-signed sertifika oluşturma (her iki OS'de de benzer)
 - name: "Generate self-signed certificates (self_signed = true)"
   block:
     - name: "Generate CA private key"
@@ -60,7 +86,6 @@
       args:
         chdir: "{{ vault_tls_path }}"
         creates: "{{ vault_tls_path }}/vault.key"
-      when: self_signed | bool == true
 
     - name: "Create self-signed CA certificate"
       command: >
@@ -72,19 +97,16 @@
       args:
         chdir: "{{ vault_tls_path }}"
         creates: "{{ vault_tls_path }}/ca.crt"
-      when: self_signed | bool == true
 
     - name: "Generate Server key"
       command: openssl genrsa -out server.key 2048
       args:
         chdir: "{{ vault_tls_path }}"
         creates: "{{ vault_tls_path }}/server.key"
-      when: self_signed | bool == true
+  when: self_signed | bool == true
 
 
-# self signed sertifika icin gelistirmeye devam edilecek...
-# csr.conf'a göre sertifikayıp 1. sunucuda üretip tüm sunuculara dağıtacağız.
-
+# Elde hazır wildcard veya benzeri sertifikalar varsa, copy ile atıyoruz
 - name: "Copy TLS certificates from Ansible controller"
   copy:
     src: "{{ item }}"
@@ -107,7 +129,15 @@
     mode: '777'
 
 - name: "Trust Certificate Authority"
-  shell: cp -r {{ vault_tls_path }}/ca.crt  /usr/local/share/ca-certificates/vault-ca.crt && sudo update-ca-certificates
+  shell: >
+    cp -r {{ vault_tls_path }}/ca.crt  /usr/local/share/ca-certificates/vault-ca.crt && update-ca-certificates
+  when: ansible_os_family == "Debian"
+
+- name: "Trust Certificate Authority (RedHat)"
+  shell: >
+    cp -r {{ vault_tls_path }}/ca.crt /etc/pki/ca-trust/source/anchors/vault-ca.crt && update-ca-trust
+  when: ansible_os_family == "RedHat"
+
 
 - name: "Create vault config directory"
   file:
@@ -181,17 +211,52 @@
     vault_unseal_keys: "{{ remote_vault_keys.stdout | from_json }}"
   run_once: true
 
-- name: "Unseal Vault First Nodes"
+# Debian
+
+- name: "Unseal Vault First Node (Debian)"
   shell: |
     vault operator unseal -address=https://127.0.0.1:8200 -tls-skip-verify {{ item | trim }}
   loop: "{{ vault_unseal_keys.unseal_keys_b64[0:vault_init_threshold] }}"
   when:
+    - ansible_os_family == "Debian"
     - (vault_status.stdout | from_json).sealed
     - inventory_hostname == groups['vault'][0]
 
-- name: "Unseal Vault nodes"
+- name: "Unseal Vault nodes (Debian)"
   shell: |
     vault operator unseal -address=https://127.0.0.1:8200 -tls-skip-verify {{ item | trim }}
   loop: "{{ vault_unseal_keys.unseal_keys_b64[0:vault_init_threshold] }}"
   when:
+    - ansible_os_family == "Debian"
+    - (vault_status.stdout | from_json).sealed
+
+# RedHat
+
+- name: "Unseal Vault First Node (RedHat)"
+  command:
+    argv:
+      - vault
+      - operator
+      - unseal
+      - "-address=https://127.0.0.1:8200"
+      - "-tls-skip-verify"
+      - "{{ item|trim }}"
+  loop: "{{ vault_unseal_keys.unseal_keys_b64[0:vault_init_threshold] }}"
+  when:
+    - ansible_os_family == "RedHat"
+    - (vault_status.stdout | from_json).sealed
+    - inventory_hostname == groups['vault'][0]
+
+- name: "Unseal Vault nodes (RedHat)"
+  command:
+    argv:
+      - vault
+      - operator
+      - unseal
+      - "-address=https://127.0.0.1:8200"
+      - "-tls-skip-verify"
+      - "{{ item|trim }}"
+  loop: "{{ vault_unseal_keys.unseal_keys_b64[0:vault_init_threshold] }}"
+  when:
+    - ansible_os_family == "RedHat"
     - (vault_status.stdout | from_json).sealed

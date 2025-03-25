@@ -1,0 +1,31 @@
+global_defs {
+  script_user root
+}
+
+vrrp_script chk_vault_script {
+  script "/etc/init.d/vault-health https://localhost:8200"
+  interval 1
+}
+
+vrrp_instance VI_1 {
+  interface {{ ansible_default_ipv4.interface }}
+  state {{ keepalived_state }}
+  virtual_router_id 51
+  priority {{ keepalived_priority }}
+  unicast_src_ip {{ ansible_host }}
+  unicast_peer {
+  {% for host in groups['vault'] %}
+    {% if host != inventory_hostname %}
+    {{ hostvars[host]['ansible_host'] }}
+    {% endif %}
+  {% endfor %}
+  }
+
+  virtual_ipaddress {
+    {{ vault_dr_virtual_ip_address }}
+  }
+
+  track_script {
+    chk_vault_script
+  }
+}

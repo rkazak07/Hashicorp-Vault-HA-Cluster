@@ -1,0 +1,17 @@
+---
+- name: "Site Playbook for All Servers"
+  hosts: vault_dr
+  become: yes
+  pre_tasks:
+    - name: "Include DR overrides"
+      include_vars:
+        file: "{{ playbook_dir }}/group_vars/all-dr.yml"
+        # 'apply: true' (Ansible 2.8+ için varsayılan)
+  roles:
+    - common
+    - firewall
+    - chrony
+    - vault
+    - keepalived
+    - auditlog
+    - disaster

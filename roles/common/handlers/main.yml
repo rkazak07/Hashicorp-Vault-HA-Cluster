@@ -1,3 +1,9 @@
 ---
 - name: reload systemctl daemon
   command: systemctl daemon-reload
+
+- name: reboot system
+  reboot:
+    msg: "Rebooting to apply changes"
+    reboot_timeout: 3600
+  when: ansible_os_family == 'RedHat'

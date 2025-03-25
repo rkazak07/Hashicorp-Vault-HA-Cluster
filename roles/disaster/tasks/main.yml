@@ -1,0 +1,62 @@
+---
+- name: "DR tasks - only on the first Vault node (vault01), if dr_enabled is true"
+  block:
+    - name: "Install python3-requests (Debian)"
+      apt:
+        name: python3-requests
+        state: present
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+
+    - name: "Install python3-requests (RedHat)"
+      yum:
+        name: python3-requests
+        state: present
+      when: ansible_os_family == "RedHat"
+
+
+    - name: "Deploy DR Python script to vault01"
+      template:
+        src: vault_disaster.py.j2
+        dest: "/usr/local/bin/vault-disaster.py"
+        mode: '0755'
+      vars:
+        # Bu değişkenleri template içinde kullanacaksınız
+        dr_unseal_servers_list: "{{ dr_unseal_servers }}"
+      # Örnek usage (vault_dr.py.j2):
+      # UNSEAL_TARGET_SERVERS = {{ dr_unseal_servers_list | to_json }}
+
+    - name: "Set Vault unseal keys fact"
+      set_fact:
+        vault_unseal_keys: "{{ remote_vault_keys.stdout | from_json }}"
+      run_once: true
+
+    - name: "Remove old /etc/vault.d/keys.txt"
+      file:
+        path: "/etc/vault.d/keys.txt"
+        state: absent
+      when: inventory_hostname == groups['vault'][0]
+
+    - name: "Write unseal keys to /etc/vault.d/keys.txt"
+      lineinfile:
+        path: "/etc/vault.d/keys.txt"
+        create: yes
+        mode: '0600'
+        line: "{{ item }}"
+      loop: "{{ vault_unseal_keys.unseal_keys_b64 }}"
+      when: inventory_hostname == groups['vault'][0]
+
+
+- name: "Schedule Vault Disaster Scripts in crontab (only on fist node)"
+  cron:
+    name: "Vault Backup"
+    job: "python3 /usr/local/bin/vault-disaster.py"
+    user: "root"
+    minute: "*/5"
+    hour: "*"
+    day: "*"
+    month: "*"
+    weekday: "*"
+  when:
+    - dr_enabled | default(false) | bool
+    - inventory_hostname == groups['vault'][0]

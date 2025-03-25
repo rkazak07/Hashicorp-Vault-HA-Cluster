@@ -1,9 +1,10 @@
 ---
-- name: "Update apt cache"
+- name: "Update apt cache (Debian)"
   apt:
     update_cache: yes
-
-- name: "Install base packages"
+  when: ansible_os_family == 'Debian'
+ 
+- name: "Install base packages (Debian)"
   apt:
     name:
       - software-properties-common
@@ -13,7 +14,27 @@
       - python3-pip
     state: present
     update_cache: yes
-
+  when: ansible_os_family == 'Debian'
+ 
+ 
+- name: "Update package metadata (RedHat)"
+  yum:
+    name: "*"
+    state: latest
+  when: ansible_os_family == 'RedHat'
+ 
+- name: "Install base packages (RedHat)"
+  yum:
+    name:
+      - wget
+      - curl
+      - python3-pip
+      - python3-jmespath
+      - python3-libselinux
+    state: present
+  when: ansible_os_family == 'RedHat'
+ 
+ 
 - name: "Configure /etc/hosts entries"
   lineinfile:
     path: /etc/hosts
@@ -21,15 +42,30 @@
     line: "{{ item.ip }}\t{{ item.fqdn }}\t{{ item.short }}"
   loop: "{{ hosts_entries | default([]) }}"
   when: hosts_entries is defined
-
-
-- name: Disable swap immediately
+ 
+ 
+- name: "Disable swap immediately "
   command: swapoff -a
   ignore_errors: yes
-
-- name: Disable swap permanently in fstab
+ 
+- name: "Disable swap permanently in fstab "
   replace:
     path: /etc/fstab
     regexp: '^(.*swap.*)'
     replace: '# \1'
   notify: reload systemctl daemon
+
+- name: "Set SELinux to permissive (runtime)"
+  selinux:
+    state: permissive
+    policy: targeted
+  when: ansible_os_family == 'RedHat'
+
+- name: "Set SELinux to permissive permanently"
+  lineinfile:
+    path: /etc/selinux/config
+    regexp: '^SELINUX='
+    line: 'SELINUX=permissive'
+    backup: yes
+  notify: reboot system
+  when: ansible_os_family == 'RedHat'

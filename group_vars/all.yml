@@ -20,6 +20,7 @@ hosts_entries:
     fqdn: "vault.domain.com"  # vault domain adresi, uygulama erişimleri ve arayüz için kullanılacaktır.
     short: "vault"
 
+# DEBIAN/UBUNTU
 # iptables kurulumu ile devam etmek için iptables_install parametresini true yapınız. mevcut firewall'unuz varsa false yapınız.
 # iptables kurallarını sunucu ip adreslerine göre düzenlemeliyiz. Virtual ip adresini dahil etmelisiniz.
 iptables_install: true
@@ -33,6 +34,36 @@ iptables_rules_v4:
   - "-A INPUT -s 192.168.117.133/32 -p udp -m udp -j ACCEPT"
   - "-A INPUT -s 192.168.117.134/32 -p udp -m udp -j ACCEPT"
   - "-A INPUT -s 192.168.117.135/32 -p udp -m udp -j ACCEPT"
+
+## RHEL/OEL
+# Rhell/Oel için firewalld kurulumu için yapılandırılması gerekiyorsa "true" yapınız.
+firewalld_install: false
+
+# Firewalld tarafında açılacak kurallar (örnek)
+# Basitçe port açma veya servis açma şeklinde tanımlayabilirsiniz
+firewalld_rules:
+  - service: ssh
+  - port: "443/tcp"
+  - port: "8200/tcp"
+  - port: "8201/tcp"
+  - port: "122/tcp"
+  - port: "22/tcp"
+
+# Kaynak IP engelleme/izin gibi gelişmiş senaryolar için
+
+ #  - source: "192.168.117.133/32"
+ #    port: "8200/tcp"
+ #  - source: "192.168.117.134/32"
+ #    port: "8200/tcp"
+ #  - source: "192.168.117.135/32"
+ #    port: "8200/tcp"
+ #  - source: "192.168.117.133/32"
+ #    port: "443/tcp"
+ #  - source: "192.168.117.134/32"
+ #    port: "443/tcp"
+ #  - source: "192.168.117.135/32"
+ #    port: "443/tcp"
+
 
 # Vault sunucularına uygulanacak sysctl parametreleri, sunucu kaynaklarınıza göre revize etmelisiniz.
 vault_sysctl_vars:
@@ -73,6 +104,9 @@ ntp_servers:
   - "1.tr.pool.ntp.org"
 
 # Vault Sürümünü belirtiniz. farklı bir sürüm tag'i içi "https://releases.hashicorp.com/vault/" adresini kullanabilirsiniz.
+
+## debian/ubuntu için "vault=1.18.5-1" rhel/oel için "vault-1.18.5-1" olarak kullanınız.
+
 vault_version: "vault=1.18.5-1"
 vault_init_keys: 5
 vault_init_threshold: 2
@@ -118,6 +152,13 @@ backup_cron_schedule: "0 2 * * *"  # Her gün gece 02:00'de çalıştır. backup
 backup_platform: "teams" # slack, teams, discord, generic olarak belirtiniz. Backup bildirimleri için formatı oluşturmaktadır.
 backup_domain_address: "https://vault.domain.com:8200" # Bu adresi virtual ip üzerinde tanımlı olan domain adresine göre ayarlayınız. virtual ip üzerinde veya etc/hosts dosyasında bu adresi bulamazsa backup almayacaktır.
 
+
+### DISASTER RECOVERY SETTINGS
+
+# DR ile ilgili ayarlar
+# Eğer true ise DR kurulumu devreye girecek. DR kurulumu için hosts.ini içerisindeki DR vault_dr hostları dikkate alınılacaktır.
+# Disaster yapısının çalışması için Prod vault sunucuları bu ansible playbook ile yapılandırılması gerekmektedir. 5 Dakikada bir prod cluster'ı DR Cluster'ı ile eşitlemektedir.
+dr_enabled: false 
 
 # Tüm yapılandırmaları sildikten sonra reboot işlemi için aşağıdaki parametreyi true yapınız. Bu parametre sadece "uninstall.yml" ile birlikte çalışmaktadır.
 reboot_after_uninstall: false
