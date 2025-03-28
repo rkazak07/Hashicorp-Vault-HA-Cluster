@@ -41,7 +41,9 @@
     create: yes
     line: "{{ item.ip }}\t{{ item.fqdn }}\t{{ item.short }}"
   loop: "{{ hosts_entries | default([]) }}"
-  when: hosts_entries is defined
+  when:
+   - hosts_entries_enabled | default(false) | bool 
+   - hosts_entries is defined
  
  
 - name: "Disable swap immediately "

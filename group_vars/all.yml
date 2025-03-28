@@ -7,6 +7,7 @@ vault_virtual_ip_address: "192.168.117.200"
 
 # Update the /etc/hosts file based on domain and server names.
 # Ensure domain names are compatible with the certificate.
+hosts_entries_enabled: false
 hosts_entries:
   - ip: "192.168.117.133"
     fqdn: "vault01.domain.com"
@@ -102,6 +103,7 @@ vault_sysctl_vars:
   #"net.ipv4.icmp_ignore_bogus_error_responses": 1
 
 # Chrony NTP servers
+ntp_servers_enabled: false
 ntp_servers:
   - "0.tr.pool.ntp.org"
   - "1.tr.pool.ntp.org"

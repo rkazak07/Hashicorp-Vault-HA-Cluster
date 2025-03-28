@@ -211,28 +211,8 @@
     vault_unseal_keys: "{{ remote_vault_keys.stdout | from_json }}"
   run_once: true
 
-# Debian
 
-- name: "Unseal Vault First Node (Debian)"
-  shell: |
-    vault operator unseal -address=https://127.0.0.1:8200 -tls-skip-verify {{ item | trim }}
-  loop: "{{ vault_unseal_keys.unseal_keys_b64[0:vault_init_threshold] }}"
-  when:
-    - ansible_os_family == "Debian"
-    - (vault_status.stdout | from_json).sealed
-    - inventory_hostname == groups['vault'][0]
-
-- name: "Unseal Vault nodes (Debian)"
-  shell: |
-    vault operator unseal -address=https://127.0.0.1:8200 -tls-skip-verify {{ item | trim }}
-  loop: "{{ vault_unseal_keys.unseal_keys_b64[0:vault_init_threshold] }}"
-  when:
-    - ansible_os_family == "Debian"
-    - (vault_status.stdout | from_json).sealed
-
-# RedHat
-
-- name: "Unseal Vault First Node (RedHat)"
+- name: "Unseal Vault First Node"
   command:
     argv:
       - vault
@@ -243,11 +223,10 @@
       - "{{ item|trim }}"
   loop: "{{ vault_unseal_keys.unseal_keys_b64[0:vault_init_threshold] }}"
   when:
-    - ansible_os_family == "RedHat"
     - (vault_status.stdout | from_json).sealed
     - inventory_hostname == groups['vault'][0]
 
-- name: "Unseal Vault nodes (RedHat)"
+- name: "Unseal Vault nodes"
   command:
     argv:
       - vault
@@ -258,5 +237,4 @@
       - "{{ item|trim }}"
   loop: "{{ vault_unseal_keys.unseal_keys_b64[0:vault_init_threshold] }}"
   when:
-    - ansible_os_family == "RedHat"
     - (vault_status.stdout | from_json).sealed

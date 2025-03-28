@@ -3,3 +3,4 @@
   service:
     name: "{{ 'chrony' if ansible_os_family == 'Debian' else 'chronyd' }}"
     state: restarted
+  when: ntp_servers_enabled | default(false) | bool
