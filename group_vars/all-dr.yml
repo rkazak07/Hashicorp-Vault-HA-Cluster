@@ -1,15 +1,14 @@
+### DISASTER RECOVERY SETTINGS
 
-### DISASTER RECOVERY SETTINGS
-
-# DR ile ilgili ayarlar
-# Eğer true ise DR kurulumu devreye girecek. DR kurulumu için hosts.ini içerisindeki DR vault_dr hostları dikkate alınılacaktır.
-# Disaster yapısının çalışması için Prod vault sunucuları bu ansible playbook ile yapılandırılması gerekmektedir. 5 Dakikada bir prod cluster'ı DR Cluster'ı ile eşitlemektedir.
+# DR-related settings
+# If set to true, DR setup will be activated. For DR setup, the vault_dr hosts in the hosts.ini file will be considered.
+# For the disaster recovery structure to work, the Prod Vault servers must be configured using this Ansible playbook. It syncs the Prod cluster with the DR cluster every 5 minutes.
 dr_enabled: false 
 
-# keepalived servisi için virtual ip adresini belirtiniz.
+# Specify the virtual IP address for the keepalived service.
 vault_dr_virtual_ip_address: "192.168.118.200"
 
-# /etc/hosts dosyası için domain ve sunucu isimlerine göre düzenleme yapınız. Domain isimlerini tanımlarken sertifika ile uyumluluğunu kontrol ediniz.
+# Edit the /etc/hosts file according to the domain and server names. Make sure the domain names are compatible with the certificate.
 hosts_entries:
   - ip: "192.168.118.133"
     fqdn: "dr-vault01.domain.com"
@@ -20,13 +19,13 @@ hosts_entries:
   - ip: "192.168.118.135"
     fqdn: "dr-vault03.domain.com"
     short: "dr-vault03"
-  - ip: "192.168.118.200" # virtual ip address
-    fqdn: "dr-vault.domain.com"  # vault domain adresi, uygulama erişimleri ve arayüz için kullanılacaktır.
+  - ip: "192.168.118.200" # virtual IP address
+    fqdn: "dr-vault.domain.com"  # This will be used for application access and UI
     short: "dr-vault"
 
 # DEBIAN/UBUNTU
-# iptables kurulumu ile devam etmek için iptables_install parametresini true yapınız. mevcut firewall'unuz varsa false yapınız.
-# iptables kurallarını sunucu ip adreslerine göre düzenlemeliyiz. Virtual ip adresini dahil etmelisiniz.
+# To proceed with iptables installation, set iptables_install to true. If you have an existing firewall, set it to false.
+# The iptables rules should be configured based on the server IP addresses. Be sure to include the virtual IP address.
 iptables_install: true
 iptables_rules_v4:
   - "-A INPUT -p tcp -m tcp --dport 22 -j ACCEPT"
@@ -46,11 +45,11 @@ iptables_rules_v4:
   - "-A INPUT -s 192.168.117.135/32 -p udp -m udp -j ACCEPT" # Prod site
 
 ## RHEL/OEL
-# Rhell/Oel için firewalld kurulumu için yapılandırılması gerekiyorsa "true" yapınız.
+# Set to "true" if firewalld needs to be installed/configured for RHEL/OEL systems.
 firewalld_install: false
 
-# Firewalld tarafında açılacak kurallar (örnek)
-# Basitçe port açma veya servis açma şeklinde tanımlayabilirsiniz
+# Rules to be opened on firewalld (example)
+# You can simply define them as services or ports.
 firewalld_rules:
   - service: ssh
   - port: "443/tcp"
@@ -59,8 +58,7 @@ firewalld_rules:
   - port: "122/tcp"
   - port: "22/tcp"
 
-
-# Kaynak IP engelleme/izin gibi gelişmiş senaryolar için
+# For advanced scenarios such as source IP blocking/allowing
 
  #  - source: "192.168.117.133/32"
  #    port: "8200/tcp"

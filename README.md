@@ -1,18 +1,18 @@
-# Hashicorp Vault HA Cluster Ansible Playbook
+# HashiCorp Vault HA Cluster Ansible Playbook
 
- Bu doküman, HashiCorp Vault Ha Cluster yapısının Ansible ile Centos/Rhel/Oel, Debian 12 ve Ubuntu sistemlerinde nasıl kurulup yönetileceğini anlatır.
+This document explains how to install and manage the HashiCorp Vault HA Cluster using Ansible on CentOS/RHEL/OEL, Debian 12, and Ubuntu systems.
 
-### 🚀 Desteklenen İşletim Sistemleri
+### 🚀 Supported Operating Systems
+
 * ✅ Debian 12
 * ✅ Ubuntu (22.04, 24.04)
 * ✅ Oracle Linux
-* ✅ Rhel
+* ✅ RHEL
 
+## 🛠 Editing Variables
 
-## 🛠 Değişkenlerin Düzenlenmesi
-
-### 📌 Inventories Dosyası (hosts.ini)
-Sunucularınızı ve IP adreslerini aşağıdaki gibi belirtebilirsiniz:
+### 📌 Inventories File (inventories/hosts.ini)
+You can define your servers and IP addresses as shown below:
 
 ```
 [vault]
@@ -24,27 +24,30 @@ vault03.domain.com ansible_host=192.168.117.135
 vault
 ```
 
-### 📌 Genel Ayarlar (group_vars/all.yml)
-Vault ve sistem genel ayarları buradan yönetilebilir:
+### 📌 General Settings (group_vars/all.yml)
+ Vault and system-wide settings can be managed here:
 
 ```
-vault_version: "vault=1.18.5-1" # Rhel/Oel için "vault-1.18.5-1" olarak duzenleyiniz.
+vault_deb_version: "vault=1.18.5-1" # debian/ubuntu
+vault_rhel_version: "vault-1.18.5-1" # rhel/oel
 vault_init_keys: 5
 vault_init_threshold: 2
 vault_cluster_name: "SAMPLE-CLUSTER"
-vault_log_level: "info" # trace,info,debug,error,warning
+vault_log_level: "info" # Options: trace, info, debug, error, warning
 vault_domain_name: "domain.com"
 vault_virtual_ip_address: "192.168.117.200"
 self_signed: false
 iptables_install: true
 ```
-* self_signed: true → Self-signed TLS sertifikaları otomatik oluşturulur.
-* iptables_install: true → Iptables otomatik yapılandırılır. False yapılırsa iptables devre dışı kalır. Debian/Ubuntu için çalışmakradır.
-* firewalld_install: false → True yapılırsa Rhel/Oel için firewalld ayarlarını yapılandırır
 
-### 📌 Her Sunucu İçin Ayrı Konfigürasyon (host_vars/)
+* self_signed: true → Automatically creates self-signed TLS certificates.
+* iptables_install: true → Automatically configures iptables. Set to false if you have your own firewall. Works for Debian/Ubuntu systems.
+* firewalld_install: false → Set to true if you want to configure firewalld for RHEL/OEL.
 
-Örnek: host_vars/vault01.domain.com.yml
+### 📌 Per-Host Configuration (host_vars/)
+
+ Example: host_vars/vault01.domain.com.yml
+ The "vault_domain_name" variable here is read from group_vars/all.yml. When editing, take your /etc/hosts or dns records into consideration.
 
 ```
 keepalived_state: MASTER
@@ -60,10 +63,10 @@ vault_retry_join:
     leader_client_key_file: "{{ vault_tls_path }}/tls.key"
 ```
 
-Örnek: host_vars/vault02.domain.com.yml
+ Example: host_vars/vault02.domain.com.yml
+ The "vault_domain_name" variable here is read from group_vars/all.yml. When editing, take your /etc/hosts or dns records into consideration.
 
 ```
-
 keepalived_state: BACKUP
 keepalived_priority: 100
 vault_retry_join:
@@ -75,29 +78,31 @@ vault_retry_join:
     leader_ca_cert_file: "{{ vault_tls_path }}/ca.crt"
     leader_client_cert_file: "{{ vault_tls_path }}/tls.crt"
     leader_client_key_file: "{{ vault_tls_path }}/tls.key"
-
 ```
 
-## 🚀 Ansible Playbook Çalıştırma
+## 🚀 Running the Ansible Playbook
 
-host_vars, group_vars ve inventories düzenlemerini sisteminize göre sağladıktan sonra playbook'u çalıştırınız. Playbook çalıştırılmadan önce sunucularda *curl*, *sshpass*, *sudo* yüklü olması gerekmektedir.
+ After configuring host_vars, group_vars, and inventories for your system, run the playbook.
+ Before executing, make sure curl, sshpass, and sudo are installed on the servers.
 
 ```
 ansible-playbook -i inventories/hosts.ini site.yml
 ```
 
-DEBUG Modu için
+For DEBUG mode
 
 ```
 ansible-playbook -i inventories/hosts.ini site.yml -vvv
 ```
 
-# 🛠 Disaster Konfigurasyonlarının Düzenlenmesi
+# 🛠 Editing Disaster Recovery Configuration
 
- Not: Main Site tarafındaki kurulumların bu playbook ile yapılması gerekmektedir, aksi takdirde DR Site tarafı düzgün çalışmayacaktır. Ayrıca host_vars/ tanımlarını yaparken etc/hosts dosyasına dahil edilen ve cluster'da bulunan hostların DNS adreslerini kullanmaktadır. Düzgün yapılandırılmazsa sağlıklı çalışmayacaktır.
+ Note: The main site must be installed using this playbook, otherwise the DR site will not function properly.
+ Additionally, while defining host_vars/, DNS addresses from the /etc/hosts file that belong to the cluster should be used.
+ If misconfigured, the DR cluster will not operate correctly.
 
-### 📌 Inventories Dosyası (hosts.ini)
-Sunucularınızı ve IP adreslerini aşağıdaki gibi belirtebilirsiniz:
+### 📌 Inventories File (hosts.ini)
+ You can define your servers and IP addresses as shown below:
 
 ```
 [vault]
@@ -110,23 +115,23 @@ dr-vault01.domain.com ansible_host=192.168.118.133
 dr-vault02.domain.com ansible_host=192.168.118.134
 dr-vault03.domain.com ansible_host=192.168.118.135
 
-
 [all:children]
 vault
-
 ```
-### 📌 Genel Ayarlar (group_vars/all-dr.yml)
-Vault ve sistem genel ayarları buradan yönetilebilir:
 
-* dr_enabled: true  → Disaster ayarlarının senkronizasyonunu sağlamaktadır.
-* iptables_install: true → Iptables otomatik yapılandırılır. False yapılırsa iptables devre dışı kalır. Debian/Ubuntu için çalışmakradır.
-* firewalld_install: false → True yapılırsa Rhel/Oel için firewalld ayarlarını yapılandırır.
+### 📌 General Settings (group_vars/all-dr.yml)
 
-### 📌 Her DR Sunucusu İçin Ayrı Konfigürasyon (host_vars/)
+* dr_enabled: true → Enables disaster recovery synchronization.
+* iptables_install: true → Automatically configures iptables. Set to false to disable. Works for Debian/Ubuntu systems.
+* firewalld_install: false → Set to true to configure firewalld for RHEL/OEL systems.
 
-host_vars altında dr tarafı için kullanacağımız yml dosyalarını oluşturmalıyız. aşağıda örnek bir yaml dosyası paylaştım. Main Site'a göre DR Site'ı yapılandırmalıyız.
+### 📌 Per-Host Configuration for DR (host_vars/)
 
-Örnek: host_vars/dr-vault01.domain.com.yml
+ You must create the necessary YAML files under host_vars for the DR side.
+ Below is an example file. The DR site should be configured based on the main site.
+
+ Example: host_vars/dr-vault01.domain.com.yml
+ The "vault_domain_name" variable here is read from group_vars/all.yml. When editing, take your /etc/hosts or dns records into consideration.
 
 ```
 keepalived_state: MASTER
@@ -140,12 +145,13 @@ vault_retry_join:
     leader_ca_cert_file: "{{ vault_tls_path }}/ca.crt"
     leader_client_cert_file: "{{ vault_tls_path }}/tls.crt"
     leader_client_key_file: "{{ vault_tls_path }}/tls.key"
-```
-
-Örnek: host_vars/dr-vault02.domain.com.yml
 
 ```
 
+ Example: host_vars/dr-vault02.domain.com.yml
+ The "vault_domain_name" variable here is read from group_vars/all.yml. When editing, take your /etc/hosts or dns records into consideration.
+
+```
 keepalived_state: BACKUP
 keepalived_priority: 100
 vault_retry_join:
@@ -157,24 +163,24 @@ vault_retry_join:
     leader_ca_cert_file: "{{ vault_tls_path }}/ca.crt"
     leader_client_cert_file: "{{ vault_tls_path }}/tls.crt"
     leader_client_key_file: "{{ vault_tls_path }}/tls.key"
-
 ```
 
-## 🚀 DR Ansible Playbook Çalıştırma
+## 🚀 Running the DR Ansible Playbook
 
-host_vars, group_vars ve inventories düzenlemerini sisteminize göre sağladıktan sonra playbook'u çalıştırınız. Playbook çalıştırılmadan önce sunucularda *curl*, *sshpass*, *sudo* yüklü olması gerekmektedir.
+ After configuring host_vars, group_vars, and inventories for your DR environment, run the playbook.
+ Make sure curl, sshpass, and sudo are installed on the servers before executing.
 
 ```
 ansible-playbook -i inventories/hosts.ini disaster.yml
 ```
 
-DEBUG Modu için
+For DEBUG mode
 
 ```
 ansible-playbook -i inventories/hosts.ini disaster.yml -vvv
 ```
 
-## 🚀 Tüm yapılandırmaları silmek için
+## 🚀 To uninstall all configurations
 
 ```
 ansible-playbook -i inventories/hosts.ini uninstall.yml

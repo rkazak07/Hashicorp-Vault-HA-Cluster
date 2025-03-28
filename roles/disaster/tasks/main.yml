@@ -21,7 +21,7 @@
         dest: "/usr/local/bin/vault-disaster.py"
         mode: '0755'
       vars:
-        # Bu değişkenleri template içinde kullanacaksınız
+        # You will use these variables in the template
         dr_unseal_servers_list: "{{ dr_unseal_servers }}"
       # Örnek usage (vault_dr.py.j2):
       # UNSEAL_TARGET_SERVERS = {{ dr_unseal_servers_list | to_json }}

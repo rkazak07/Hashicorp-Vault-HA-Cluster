@@ -1,5 +1,5 @@
-# Eğer sertifikalar kendinize ait ise "roles/vault/files"  altına sertifikaları bırakınız. Sertifika isimlerini değiştirmeyiniz.
-# leader_api_addr kısmını hostname'e göre düzenleyiniz... Aşağıda örnek yapı paylaştım.
+# If you are using your own certificates, place them under "roles/vault/files". Do not rename the certificate files.
+# Configure the leader_api_addr section according to the hostname... An example structure is provided below.
 
 keepalived_state: BACKUP
 keepalived_priority: 99

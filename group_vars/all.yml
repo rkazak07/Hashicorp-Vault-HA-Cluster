@@ -1,11 +1,12 @@
-
-# Buradaki domain ismi uygulama erişimi ve configlerde kullanılacaktır, kullanılan sertifika ile uyumluluğuna dikkat ediniz.
+# This domain name will be used in application access and config files.
+# Ensure that it is compatible with the certificate being used.
 vault_domain_name: "domain.com"
 
-# keepalived servisi için virtual ip adresini belirtiniz.
+# Specify the virtual IP address for the keepalived service.
 vault_virtual_ip_address: "192.168.117.200"
 
-# /etc/hosts dosyası için domain ve sunucu isimlerine göre düzenleme yapınız. Domain isimlerini tanımlarken sertifika ile uyumluluğunu kontrol ediniz.
+# Update the /etc/hosts file based on domain and server names.
+# Ensure domain names are compatible with the certificate.
 hosts_entries:
   - ip: "192.168.117.133"
     fqdn: "vault01.domain.com"
@@ -16,13 +17,15 @@ hosts_entries:
   - ip: "192.168.117.135"
     fqdn: "vault03.domain.com"
     short: "vault03"
-  - ip: "192.168.117.200" # virtual ip address
-    fqdn: "vault.domain.com"  # vault domain adresi, uygulama erişimleri ve arayüz için kullanılacaktır.
+  - ip: "192.168.117.200" # virtual IP address
+    fqdn: "vault.domain.com"  # This address will be used for application access and UI.
     short: "vault"
 
 # DEBIAN/UBUNTU
-# iptables kurulumu ile devam etmek için iptables_install parametresini true yapınız. mevcut firewall'unuz varsa false yapınız.
-# iptables kurallarını sunucu ip adreslerine göre düzenlemeliyiz. Virtual ip adresini dahil etmelisiniz.
+# Set iptables_install to true to proceed with iptables installation.
+# If you already have a firewall, set it to false.
+# iptables rules must be configured based on server IP addresses.
+# Be sure to include the virtual IP address as well.
 iptables_install: true
 iptables_rules_v4:
   - "-A INPUT -p tcp -m tcp --dport 22 -j ACCEPT"
@@ -36,11 +39,11 @@ iptables_rules_v4:
   - "-A INPUT -s 192.168.117.135/32 -p udp -m udp -j ACCEPT"
 
 ## RHEL/OEL
-# Rhell/Oel için firewalld kurulumu için yapılandırılması gerekiyorsa "true" yapınız.
+# Set to true if firewalld installation/configuration is required for RHEL/OEL.
 firewalld_install: false
 
-# Firewalld tarafında açılacak kurallar (örnek)
-# Basitçe port açma veya servis açma şeklinde tanımlayabilirsiniz
+# Rules to be opened on firewalld (example)
+# You can define ports or services simply.
 firewalld_rules:
   - service: ssh
   - port: "443/tcp"
@@ -49,7 +52,7 @@ firewalld_rules:
   - port: "122/tcp"
   - port: "22/tcp"
 
-# Kaynak IP engelleme/izin gibi gelişmiş senaryolar için
+# For advanced scenarios such as source IP blocking/allowing
 
  #  - source: "192.168.117.133/32"
  #    port: "8200/tcp"
@@ -64,8 +67,8 @@ firewalld_rules:
  #  - source: "192.168.117.135/32"
  #    port: "443/tcp"
 
-
-# Vault sunucularına uygulanacak sysctl parametreleri, sunucu kaynaklarınıza göre revize etmelisiniz.
+# Sysctl parameters to be applied on Vault servers.
+# Revise these settings based on your server resources.
 vault_sysctl_vars:
   "vm.swappiness": 0
   "vm.vfs_cache_pressure": 75
@@ -74,6 +77,7 @@ vault_sysctl_vars:
   "vm.max_map_count": 262144
   "fs.file-max": 262144
   "fs.suid_dumpable": 0
+  # Additional networking parameters (commented out)
   #"net.core.wmem_default": 25165824
   #"net.core.rmem_default": 25165824
   #"net.core.wmem_max": 25165824
@@ -97,30 +101,32 @@ vault_sysctl_vars:
   #"net.ipv4.icmp_echo_ignore_broadcasts": 1
   #"net.ipv4.icmp_ignore_bogus_error_responses": 1
 
-
-# Chrony NTP Sunucuları
+# Chrony NTP servers
 ntp_servers:
   - "0.tr.pool.ntp.org"
   - "1.tr.pool.ntp.org"
 
-# Vault Sürümünü belirtiniz. farklı bir sürüm tag'i içi "https://releases.hashicorp.com/vault/" adresini kullanabilirsiniz.
+# Specify the Vault version.
+# For a different version tag, refer to: https://releases.hashicorp.com/vault/
 
-## debian/ubuntu için ' vault_deb_version: "vault=1.18.5-1" ' değişkeni çalışacaktır.
-## Rhel/oel için: ' vault_rhel_version: "vault-1.18.5-1" ' değişkeni çalışacaktır.
- 
+## For debian/ubuntu: use 'vault_deb_version: "vault=1.18.5-1"'
+## For rhel/oel: use 'vault_rhel_version: "vault-1.18.5-1"'
+
 vault_deb_version: "vault=1.18.5-1" # debian/ubuntu
 vault_rhel_version: "vault-1.18.5-1" # rhel/oel
 vault_init_keys: 5
 vault_init_threshold: 2
 vault_cluster_name: "SAMPLE-CLUSTER"
-vault_log_level: "info" # trace,info,debug,error,warning
+vault_log_level: "info" # Options: trace, info, debug, error, warning
 
-# Self-signed (true) ya da wildcard (false)
-# Bu adımdaki self signed kısmı geliştirilme sürecindedir. "false" olarak işaretledikten sonra "roles/vault/files" altına sertifikalarımı bırakabiliriz. dosya isimlendirmeleri için örnek sertifika bırakıldı.
+# Self-signed (true) or wildcard (false)
+# Self-signed support is in development.
+# If set to false, you can place your own certificates under roles/vault/files.
+# A sample certificate is provided for file naming reference.
 self_signed: false
 self_signed_cert_days: "730"
 
-# self signed sertifika için ihtiyaç duyulan san bilgilerini belirtiniz.
+# SAN information required for self-signed certificates
 vault_tls_alt_names:
   dns:
     - "*.domain.com"
@@ -135,32 +141,24 @@ vault_tls_alt_names:
     - "192.168.117.135"
     - "192.168.117.200"
 
- 
-# Vault TLS ve raft path'i sisteminize göre düzenleyebilirsiniz. "vault_key_path" 1. vault sunucusu içerisinde belirtilen lokasyona unseal keylerini göndermesi için kullanılmaktadır.
+# You can adjust the Vault TLS and raft paths according to your system.
+# vault_key_path is used to deliver unseal keys to the specified location on the first Vault server.
 vault_tls_path: "/opt/vault-tls"
 vault_raft_path: "/opt/datavault/raft"
 vault_key_path: "/etc/vault.d/vault_init.json"
-vault_audit_path: "/var/log/vault" # Audit log dizinini belirtiniz. Sadece lider olan sunucu üzerinde audit loglar tutulacak. Lider değişikliklerine göz alarak sie ürününü düzenleyiniz.
-auditlog_retention_days: 7 # logrotate için auditlog rotasyon süresi
-auditlog_logrotate_path: "/etc/logrotate.d/vault_audit" # logrotate için oluşturulan config dizinini belirtiyoruz.
+vault_audit_path: "/var/log/vault" # Specify the audit log directory. Only the leader server will store audit logs. Adjust your SIEM product considering possible leader changes.
+auditlog_retention_days: 7 # Logrotate retention period for audit logs
+auditlog_logrotate_path: "/etc/logrotate.d/vault_audit" # Path to the logrotate config file for audit logs
 
+# To activate the backup structure, define the following variables:
+backup_enabled: true # If false, the backup structure will not be created.
+backup_retention_days: 30  # Number of backups to retain
+backup_path: /backup/vault-backup  # Directory where backups will be stored
+backup_webhook_url: "https://example.webhook.office.com/webhookb2/..."  # Webhook URL for backup notifications
+backup_cron_schedule: "0 2 * * *"  # Runs every day at 2:00 AM. Backups will be managed by the crontab on the leader node.
+backup_platform: "teams" # Choose between: slack, teams, discord, generic
+backup_domain_address: "https://vault.domain.com:8200" # Adjust this address based on the domain name assigned to the virtual IP. If this address is not resolvable, backup will not run.
 
-# Backup yapısını aktif etmek için aşağıdaki  bilgileri oluşturunuz.
-backup_enabled: true # false yapılırsa backup yapısı oluşturulmayacaktır.
-backup_retention_days: 30  # Kaç adet backup saklanacağını belirtiyoruz.
-backup_path: /backup/vault-backup  # Backupların tutulacağı dizini oluşturuyoruz.
-backup_webhook_url: "https://example.webhook.office.com/webhookb2/5f05c96f-aa2d-4b5b-ac3a-79494a7533c4@9fb7cfb6-3533-4cb6-889d-45cb2869eb5c/IncomingWebhook/79bccb01a86049fe84ff5d9a456ac91d/c821ab39-2287-41cf-8b60-2c19688d464c"  # Backup bildirimleri için webhook
-backup_cron_schedule: "0 2 * * *"  # Her gün gece 02:00'de çalıştır. backuplar lider olan sunucunun crontab'ı üzerinde çalışır.
-backup_platform: "teams" # slack, teams, discord, generic olarak belirtiniz. Backup bildirimleri için formatı oluşturmaktadır.
-backup_domain_address: "https://vault.domain.com:8200" # Bu adresi virtual ip üzerinde tanımlı olan domain adresine göre ayarlayınız. virtual ip üzerinde veya etc/hosts dosyasında bu adresi bulamazsa backup almayacaktır.
-
-
-### DISASTER RECOVERY SETTINGS
-
-# DR ile ilgili ayarlar
-# Eğer true ise DR kurulumu devreye girecek. DR kurulumu için hosts.ini içerisindeki DR vault_dr hostları dikkate alınılacaktır.
-# Disaster yapısının çalışması için Prod vault sunucuları bu ansible playbook ile yapılandırılması gerekmektedir. 5 Dakikada bir prod cluster'ı DR Cluster'ı ile eşitlemektedir.
-dr_enabled: false 
-
-# Tüm yapılandırmaları sildikten sonra reboot işlemi için aşağıdaki parametreyi true yapınız. Bu parametre sadece "uninstall.yml" ile birlikte çalışmaktadır.
+# After wiping all configurations, set this to true to allow reboot.
+# This parameter only works with the "uninstall.yml" playbook.
 reboot_after_uninstall: false
