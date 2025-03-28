@@ -9,6 +9,7 @@ dr_enabled: false
 vault_dr_virtual_ip_address: "192.168.118.200"
 
 # Edit the /etc/hosts file according to the domain and server names. Make sure the domain names are compatible with the certificate.
+hosts_entries_enabled: false
 hosts_entries:
   - ip: "192.168.118.133"
     fqdn: "dr-vault01.domain.com"
