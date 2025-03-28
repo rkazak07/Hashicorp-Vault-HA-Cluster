@@ -46,7 +46,7 @@ iptables_install: true
 
 ### 📌 Per-Host Configuration (host_vars/)
 
- Example: host_vars/vault01.domain.com.yml
+ Example: host_vars/vault01.domain.com.yml.
  The "vault_domain_name" variable here is read from group_vars/all.yml. When editing, take your /etc/hosts or dns records into consideration.
 
 ```
@@ -63,7 +63,7 @@ vault_retry_join:
     leader_client_key_file: "{{ vault_tls_path }}/tls.key"
 ```
 
- Example: host_vars/vault02.domain.com.yml
+ Example: host_vars/vault02.domain.com.yml.
  The "vault_domain_name" variable here is read from group_vars/all.yml. When editing, take your /etc/hosts or dns records into consideration.
 
 ```
@@ -130,7 +130,7 @@ vault
  You must create the necessary YAML files under host_vars for the DR side.
  Below is an example file. The DR site should be configured based on the main site.
 
- Example: host_vars/dr-vault01.domain.com.yml
+ Example: host_vars/dr-vault01.domain.com.yml.
  The "vault_domain_name" variable here is read from group_vars/all.yml. When editing, take your /etc/hosts or dns records into consideration.
 
 ```
@@ -148,7 +148,7 @@ vault_retry_join:
 
 ```
 
- Example: host_vars/dr-vault02.domain.com.yml
+ Example: host_vars/dr-vault02.domain.com.yml.
  The "vault_domain_name" variable here is read from group_vars/all.yml. When editing, take your /etc/hosts or dns records into consideration.
 
 ```
