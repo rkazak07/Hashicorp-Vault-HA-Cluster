@@ -6,7 +6,7 @@ This document explains how to install and manage the HashiCorp Vault HA Cluster 
 
 * ✅ Debian 12
 * ✅ Ubuntu (22.04, 24.04)
-* ✅ Oracle Linux
+* ✅ Oracle Linux / Rocky Linux
 * ✅ RHEL
 
 ## 🛠 Editing Variables
