@@ -6,8 +6,7 @@ vault_domain_name: "domain.com"
 vault_virtual_ip_address: "192.168.117.200"
 
 # Update the /etc/hosts file based on domain and server names.
-# Ensure domain names are compatible with the certificate.
-To activate /etc/hosts settings, do "hosts_entries_enabled: true"
+# Ensure domain names are compatible with the certificate. To activate /etc/hosts settings, do "hosts_entries_enabled: true"
 hosts_entries_enabled: false
 hosts_entries:
   - ip: "192.168.117.133"
@@ -104,7 +103,7 @@ vault_sysctl_vars:
   #"net.ipv4.icmp_ignore_bogus_error_responses": 1
 
 # Chrony NTP servers
-To activate chrony settings, do "ntp_servers_enabled: true"
+# To activate chrony settings, do "ntp_servers_enabled: true"
 ntp_servers_enabled: false
 ntp_servers:
   - "0.tr.pool.ntp.org"
