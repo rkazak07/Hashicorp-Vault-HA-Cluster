@@ -15,9 +15,15 @@
     group: vault
     mode: '0640'
 
+- name: "Read vault_init.json from first node (for all nodes)"
+  shell: cat "{{ vault_key_path }}"
+  delegate_to: "{{ groups['vault'][0] }}"
+  register: remote_vault_keys
+  run_once: true
+
 - name: "Retrieve Vault root token"
   set_fact:
-    vault_root_token: "{{ lookup('file', vault_key_path) | from_json | json_query('root_token') }}"
+    vault_root_token: "{{ remote_vault_keys.stdout | from_json | json_query('root_token') }}"
 
 - name: "Login to Vault using root token"
   command: vault login {{ vault_root_token }}

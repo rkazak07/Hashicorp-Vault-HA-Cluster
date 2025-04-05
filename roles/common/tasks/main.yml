@@ -12,6 +12,7 @@
       - gnupg
       - wget
       - python3-pip
+      - logrotate
     state: present
     update_cache: yes
   when: ansible_os_family == 'Debian'
@@ -31,6 +32,7 @@
       - python3-pip
       - python3-jmespath
       - python3-libselinux
+      - logrotate
     state: present
   when: ansible_os_family == 'RedHat'
  
